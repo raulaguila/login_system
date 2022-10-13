@@ -7,7 +7,7 @@ from fastapi import APIRouter, Response, status, Depends, HTTPException
 from app.database import get_connection
 from app.serializers import userEntity, userResponseEntity
 from .. import utils, oauth2
-from app.schemas import user
+from app.schemas import schema_user
 from pymongo import MongoClient
 from app.model import model_user
 
@@ -17,9 +17,9 @@ ACCESS_TOKEN_EXPIRES_IN = int(os.getenv("ACCESS_TOKEN_EXPIRES_IN"))
 REFRESH_TOKEN_EXPIRES_IN = int(os.getenv("REFRESH_TOKEN_EXPIRES_IN"))
 
 
-@router.post('/register', status_code=status.HTTP_201_CREATED, response_model=user.UserResponseSchema)
+@router.post('/register', status_code=status.HTTP_201_CREATED, response_model=schema_user.UserResponseSchema)
 # async def create_user(payload: user.CreateUserSchema, user_id: str = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
-async def create_user(payload: user.CreateUserSchema, client: MongoClient = Depends(get_connection)):
+async def create_user(payload: schema_user.CreateUserSchema, client: MongoClient = Depends(get_connection)):
 
     # Compare password and passwordConfirm
     if payload.password != payload.passwordConfirm:
@@ -50,7 +50,7 @@ async def create_user(payload: user.CreateUserSchema, client: MongoClient = Depe
 
 
 @router.post('/login')
-async def login(payload: user.LoginUserSchema, response: Response, Authorize: oauth2.AuthJWT = Depends(), client: MongoClient = Depends(get_connection)):
+async def login(payload: schema_user.LoginUserSchema, response: Response, Authorize: oauth2.AuthJWT = Depends(), client: MongoClient = Depends(get_connection)):
     # Check if the user exist
     pipeline = [{'$match': {'email': payload.email.lower()}}]
     user = await model_user.get_first(client, pipeline)

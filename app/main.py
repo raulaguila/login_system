@@ -14,7 +14,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 
 app = FastAPI(
-    title="API - API Rest",
+    title="API - Authentication API",
     version=os.getenv('SYS_VERSION') if os.getenv('SYS_VERSION') else '1.0.0',
     middleware=[Middleware(
         CORSMiddleware,

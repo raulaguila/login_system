@@ -1,5 +1,6 @@
 # API - Rest
 ___
+## Configuration
 Create .env file with following parameters:
 ```bash
 # Redis infos
@@ -33,7 +34,20 @@ JWT_PUBLIC_KEY=''
 SYS_VERSION='0.0.1'
 ```
 ___
+## Docker Network
 Create the docker network with the following command:
 ```bash
-docker network create -d bridge --subnet=10.5.0.0/24 --gateway=10.5.0.1 api_network
+sudo docker network create -d bridge --subnet=10.5.0.0/24 --gateway=10.5.0.1 api_network
+```
+___
+## Docker Containers
+To run all containers, run the following command:
+```bash
+sudo docker-compose up -d --build
+```
+To run only a specific container, run any of the following command:
+```bash
+sudo docker-compose -f docker-compose.mongo.yml up -d --build # For run only the mongodb container
+sudo docker-compose -f docker-compose.redis.yml up -d --build # For run only the redis container
+sudo docker-compose -f docker-compose.api.yml up -d --build # For run only the api container
 ```

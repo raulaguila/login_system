@@ -43,7 +43,7 @@
     "**/__pycache__": true
   },
 
-  "window.title": "${dirty}$(activeEditorShort)$(separator] ${rootName)$(separator)S{applame}",
+  "window.title": "${dirty}${activeEditorShort}${separator}${rootName}${separator}${appName}",
   "window.zoomLevel": -1,
   "window.titleSeparator": " - ",
   "window.closeWhenEmpty": false,

@@ -1,1 +1,1 @@
-from ..schemas import user
+from ..schemas import user as schema_user
