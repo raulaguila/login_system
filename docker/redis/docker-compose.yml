@@ -1,0 +1,19 @@
+version: '3.2'
+
+services:
+
+  redis:
+
+    container_name: docker_redis
+    image: redis:latest
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASS}
+    ports:
+      - ${REDIS_PORT}:6379
+    env_file:
+      - ../../.env
+
+networks:
+  default:
+    external:
+      name: api_network

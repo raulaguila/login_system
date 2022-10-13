@@ -1,0 +1,24 @@
+version: '3.2'
+
+services:
+
+  api_rest:
+
+    container_name: docker_api
+    build: .
+    restart: always
+    ports:
+      - 7707:7707
+    volumes:
+      - .:/app
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    tty: true
+    networks:
+      default:
+        ipv4_address: 10.5.0.10
+
+networks:
+  default:
+    external:
+      name: api_network

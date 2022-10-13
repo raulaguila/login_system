@@ -1,0 +1,57 @@
+{
+  "workbench.tree.indent": 15,
+  "workbench.editor.autoLockGroups": {},
+  "workbench.editor.closeOnFileDelete": false,
+  "workbench.editor.tabCloseButton": "left",
+  "workbench.iconTheme": "material-icon-theme",
+
+  "editor.formatOnSave": false,
+  "editor.formatOnPaste": false,
+  "editor.minimap.maxColumn": 120,
+  "editor.dragAndDrop": true,
+  "editor.autoIndent": "full",
+  "editor.fontSize": 13,
+  "editor.lineNumbers": "on",
+  "editor.lineHeight": 17,
+  "editor.renderWhitespace": "none",
+  "editor.tabSize": 4,
+  "editor.stickyScroll.enabled": true,
+  "editor.stickyScroll.maxLineCount": 5,
+
+  "explorer.compactFolders": false,
+  "explorer.confirmDelete": true,
+  "explorer.confirmUndo": "default",
+  "explorer.decorations.colors": true,
+  "explorer.copyRelativePathSeparator": "auto",
+
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 100,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "files.enableTrash": true,
+  "files.exclude": {
+    "**/env": true,
+    "**/ vscode": false,
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "*/.DS Store": true,
+    "**/Thumbs.db": true,
+    "**/.mypy_cache": true,
+    "**/__pycache__": true
+  },
+
+  "window.title": "${dirty}$(activeEditorShort)$(separator] ${rootName)$(separator)S{applame}",
+  "window.zoomLevel": -1,
+  "window.titleSeparator": " - ",
+  "window.closeWhenEmpty": false,
+  "window.autoDetectColorScheme": false,
+  "launch": {
+    "configurations": [],
+    "compounds": []
+  },
+
+  "python.formatting.autopep8Args": ["-max-l1ne-length", "700"]
+}

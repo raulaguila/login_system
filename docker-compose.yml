@@ -1,0 +1,46 @@
+version: '3.2'
+
+services:
+
+  redis:
+
+    extends:
+      file: ./docker/redis/docker-compose.yml
+      service: redis
+    networks:
+      default:
+        ipv4_address: 10.5.0.5
+
+  mongo:
+    extends:
+      file: ./docker/mongo/docker-compose.yml
+      service: mongo
+    networks:
+      default:
+        ipv4_address: 10.5.0.6
+
+  api_rest:
+
+    container_name: docker_api
+    build: .
+    restart: always
+    depends_on:
+      - redis
+      - mongo
+    ports:
+      - 7707:7707
+    volumes:
+      - .:/app
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    tty: true
+    networks:
+      default:
+        ipv4_address: 10.5.0.10
+
+networks:
+  default:
+    external:
+      name: api_network
+
+# Create network: docker network create -d bridge --subnet=10.5.0.0/24 --gateway=10.5.0.1 api_network
