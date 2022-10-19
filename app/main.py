@@ -13,6 +13,10 @@ from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 
 
+doc_endpoint_1 = os.getenv('DOC_ENDPOINT')
+doc_endpoint_2 = os.getenv('REDOC_ENDPOINT')
+
+
 app = FastAPI(
     title="API - Authentication API",
     version=os.getenv('SYS_VERSION') if os.getenv('SYS_VERSION') else '1.0.0',
@@ -25,9 +29,9 @@ app = FastAPI(
         max_age=1
     )],
     debug=False,
-    description="Documentations endpoints: \'/docs\' and \'/redocs\'.",
-    docs_url="/docs",
-    redoc_url="/redocs",
+    description=f"Documentations endpoints: {doc_endpoint_1} and {doc_endpoint_2}.",
+    docs_url=doc_endpoint_1,
+    redoc_url=doc_endpoint_2,
     swagger_ui_parameters = {"docExpansion":"none"},
 )
 

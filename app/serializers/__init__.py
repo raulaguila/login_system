@@ -1,1 +1,1 @@
-from app.serializers.userSerializers import *
+from ..serializers.userSerializers import *

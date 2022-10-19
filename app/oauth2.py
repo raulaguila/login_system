@@ -1,4 +1,3 @@
-from http import client
 import os
 import base64
 
@@ -12,10 +11,9 @@ from app.database import connector
 from app.model import model_user
 from .serializers.userSerializers import userEntity
 
-# from .database import User
-
 
 class Settings(BaseModel):
+
     authjwt_algorithm: str = os.getenv("JWT_ALGORITHM")
     authjwt_decode_algorithms: List[str] = [os.getenv("JWT_ALGORITHM")]
     authjwt_token_location: set = {'cookies', 'headers'}
