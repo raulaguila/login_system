@@ -3,7 +3,7 @@ import base64
 
 from typing import List
 from fastapi import Depends, HTTPException, status
-from fastapi_jwt_auth import AuthJWT
+from async_fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 from bson.objectid import ObjectId
 
@@ -12,13 +12,18 @@ from app.model import model_user
 from .serializers.userSerializers import userEntity
 
 
+COKIE_ACCESS_TOKEN = os.getenv('COKIE_ACCESS_TOKEN') if os.getenv('COKIE_ACCESS_TOKEN') else 'access_token'
+COKIE_REFRESH_TOKEN = os.getenv('COKIE_REFRESH_TOKEN') if os.getenv('COKIE_REFRESH_TOKEN') else  'refresh_token'
+COKIE_LOGGED_TOKEN = os.getenv('COKIE_LOGGED_TOKEN') if os.getenv('COKIE_LOGGED_TOKEN') else  'logged_in'
+
+
 class Settings(BaseModel):
 
     authjwt_algorithm: str = os.getenv("JWT_ALGORITHM")
     authjwt_decode_algorithms: List[str] = [os.getenv("JWT_ALGORITHM")]
     authjwt_token_location: set = {'cookies', 'headers'}
-    authjwt_access_cookie_key: str = 'access_token'
-    authjwt_refresh_cookie_key: str = 'refresh_token'
+    authjwt_access_cookie_key: str = COKIE_ACCESS_TOKEN
+    authjwt_refresh_cookie_key: str = COKIE_REFRESH_TOKEN
     authjwt_cookie_csrf_protect: bool = False
     authjwt_public_key: str = base64.b64decode(os.getenv("JWT_PUBLIC_KEY")).decode('utf-8')
     authjwt_private_key: str = base64.b64decode(os.getenv("JWT_PRIVATE_KEY")).decode('utf-8')
@@ -43,8 +48,8 @@ async def require_user(Authorize: AuthJWT = Depends()):
         conn = connector()
         client = await conn.connect()
 
-        Authorize.jwt_required()
-        user_id = Authorize.get_jwt_subject()
+        await Authorize.jwt_required()
+        user_id = await Authorize.get_jwt_subject()
         pipeline = [{'$match': {'_id': ObjectId(str(user_id))}}]
         user = await model_user.get_first(client, pipeline)
 
@@ -80,4 +85,4 @@ async def require_user(Authorize: AuthJWT = Depends()):
     except Exception:
         pass
 
-    return user_id
+    return user

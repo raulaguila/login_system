@@ -15,12 +15,18 @@ MONGO_USER='admin'
 MONGO_PASS='password123'
 MONGO_BASE='fastapi'
 
+# Documentation endpoints
 DOC_ENDPOINT='/docs'
 REDOC_ENDPOINT='/redocs'
 
+# Cookies keys
+COKIE_ACCESS_TOKEN='api_access_token'
+COKIE_REFRESH_TOKEN='api_refresh_token'
+COKIE_LOGGED_TOKEN='api_logged_in'
+
 #JWT infos
-ACCESS_TOKEN_EXPIRES_IN='15'
-REFRESH_TOKEN_EXPIRES_IN='60'
+ACCESS_TOKEN_EXPIRES_IN='15' # minutes
+REFRESH_TOKEN_EXPIRES_IN='60' # minutes
 JWT_ALGORITHM='RS256'
 
 # 1 - Generate JWT Private Key: openssl genrsa -out private.pem 2048

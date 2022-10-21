@@ -45,7 +45,6 @@ async def create_user(payload: schema_user.CreateUserSchema, client: MongoClient
         if error == 'userAlredyExist':
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'{e}')
 
-        print(f'{e}')
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'{e}')
 
 
@@ -69,15 +68,15 @@ async def login(payload: schema_user.LoginUserSchema, response: Response, Author
     user = userEntity(user)
 
     # Create access token
-    access_token = Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
+    access_token = await Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
 
     # Create refresh token
-    refresh_token = Authorize.create_refresh_token(subject=str(user["id"]), expires_time=timedelta(minutes=REFRESH_TOKEN_EXPIRES_IN))
+    refresh_token = await Authorize.create_refresh_token(subject=str(user["id"]), expires_time=timedelta(minutes=REFRESH_TOKEN_EXPIRES_IN))
 
     # Store refresh and access tokens in cookie
-    response.set_cookie('access_token', access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
-    response.set_cookie('refresh_token', refresh_token, REFRESH_TOKEN_EXPIRES_IN * 60, REFRESH_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
-    response.set_cookie('logged_in', 'True', ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, False, 'lax')
+    response.set_cookie(oauth2.COKIE_ACCESS_TOKEN, access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
+    response.set_cookie(oauth2.COKIE_REFRESH_TOKEN, refresh_token, REFRESH_TOKEN_EXPIRES_IN * 60, REFRESH_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
+    response.set_cookie(oauth2.COKIE_LOGGED_TOKEN, 'True', ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, False, 'lax')
 
     # Send both access
     return {'status': 'success', 'access_token': access_token}
@@ -86,9 +85,9 @@ async def login(payload: schema_user.LoginUserSchema, response: Response, Author
 @router.get('/refresh')
 async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(), client: MongoClient = Depends(get_connection)):
     try:
-        Authorize.jwt_refresh_token_required()
+        await Authorize.jwt_refresh_token_required()
 
-        user_id = Authorize.get_jwt_subject()
+        user_id = await Authorize.get_jwt_subject()
 
         if not user_id:
 
@@ -101,7 +100,7 @@ async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(
 
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='The user belonging to this token no logger exist')
 
-        access_token = Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
+        access_token = await Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
 
     except Exception as e:
 
@@ -112,16 +111,16 @@ async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(
 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
-    response.set_cookie('access_token', access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
-    response.set_cookie('logged_in', 'True', ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, False, 'lax')
+    response.set_cookie(oauth2.COKIE_ACCESS_TOKEN, access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
+    response.set_cookie(oauth2.COKIE_LOGGED_TOKEN, 'True', ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, False, 'lax')
 
     return {'access_token': access_token}
 
 
 @router.get('/logout', status_code=status.HTTP_200_OK)
-def logout(response: Response, Authorize: oauth2.AuthJWT = Depends(), user_id: str = Depends(oauth2.require_user)):
+async def logout(response: Response, Authorize: oauth2.AuthJWT = Depends(), user_id: str = Depends(oauth2.require_user)):
 
-    Authorize.unset_jwt_cookies()
-    response.set_cookie('logged_in', '', -1)
+    await Authorize.unset_jwt_cookies()
+    response.set_cookie(oauth2.COKIE_LOGGED_TOKEN, '', -1)
 
     return {'status': 'success'}
