@@ -11,14 +11,17 @@ from app.schemas import schema_user
 from pymongo import MongoClient
 from app.model import model_user
 
-router = APIRouter()
+router = APIRouter(
+    tags=['Auth'],
+    prefix='/auth'
+)
 
 ACCESS_TOKEN_EXPIRES_IN = int(os.getenv("ACCESS_TOKEN_EXPIRES_IN"))
 REFRESH_TOKEN_EXPIRES_IN = int(os.getenv("REFRESH_TOKEN_EXPIRES_IN"))
 
 
 @router.post('/register', status_code=status.HTTP_201_CREATED, response_model=schema_user.UserResponseSchema)
-# async def create_user(payload: user.CreateUserSchema, user_id: str = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
+# async def create_user(payload: schema_user.CreateUserSchema, logged: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
 async def create_user(payload: schema_user.CreateUserSchema, client: MongoClient = Depends(get_connection)):
 
     # Compare password and passwordConfirm

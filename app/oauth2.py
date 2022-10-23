@@ -9,7 +9,6 @@ from bson.objectid import ObjectId
 
 from app.database import connector
 from app.model import model_user
-from .serializers.userSerializers import userEntity
 
 
 COKIE_ACCESS_TOKEN = os.getenv('COKIE_ACCESS_TOKEN') if os.getenv('COKIE_ACCESS_TOKEN') else 'access_token'
@@ -58,8 +57,6 @@ async def require_user(Authorize: AuthJWT = Depends()):
 
         if not user["verified"]:
             raise NotVerified()
-
-        user = userEntity(user)
 
     except Exception as e:
         error = e.__class__.__name__

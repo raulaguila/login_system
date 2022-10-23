@@ -2,10 +2,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+import time
 import aioredis
 import app.routers as routers
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 
@@ -15,6 +17,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 doc_endpoint_1 = os.getenv('DOC_ENDPOINT')
 doc_endpoint_2 = os.getenv('REDOC_ENDPOINT')
+doc_endpoint_3 = os.getenv('JSON_ENDPOINT')
 
 
 app = FastAPI(
@@ -32,13 +35,44 @@ app = FastAPI(
     description=f"Documentations endpoints: {doc_endpoint_1} and {doc_endpoint_2}.",
     docs_url=doc_endpoint_1,
     redoc_url=doc_endpoint_2,
+    openapi_url=doc_endpoint_3,
     swagger_ui_parameters = {"docExpansion":"none"},
 )
 
 
-app.include_router(routers.root.router, tags=['Root'])
-app.include_router(routers.auth.router, tags=['Auth'], prefix='/auth')
-app.include_router(routers.user.router, tags=['Users'], prefix='/users')
+app.include_router(routers.root.router)
+app.include_router(routers.auth.router)
+app.include_router(routers.user.router)
+
+
+@app.exception_handler(Exception)
+async def exception_callback(request: Request, exc: Exception):
+
+    request_info: dict = {
+        'url': f'{request.url}',
+        'path_params': request.path_params,
+        'query_params': f'{request.query_params}',
+        'cookies': request.cookies
+    }
+
+    return JSONResponse(
+        status_code=status.HTTP_418_IM_A_TEAPOT,
+        content={
+            'message': f'Something wrong [{exc.__class__.__name__}]: {exc}',
+            'request': request_info
+        },
+    )
+
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+
+    return response
 
 
 @app.on_event("startup")
@@ -50,9 +84,8 @@ async def startup_event():
         redis =  aioredis.from_url(f"redis://{os.environ['REDIS_HOST']}:{os.environ['REDIS_PORT']}", encoding="utf8", decode_responses=True, password=os.environ['REDIS_PASS'])
     else:
         redis =  aioredis.from_url(f"redis://{os.environ['REDIS_HOST']}:{os.environ['REDIS_PORT']}", encoding="utf8", decode_responses=True)
-    FastAPICache.init(RedisBackend(redis), prefix="fimis-cache")
 
-    # print("API Started...")
+    FastAPICache.init(RedisBackend(redis), prefix="fimis-cache")
 
 
 @app.on_event("shutdown")
@@ -62,5 +95,3 @@ async def shutdown_event():
 
     await redis.close()
     await redis.connection_pool.disconnect()
-
-    # print("API Stoped...")
