@@ -9,7 +9,7 @@ services:
       service: redis
     networks:
       default:
-        ipv4_address: 10.5.0.5
+        ipv4_address: 10.5.0.50
 
   mongo:
     extends:
@@ -17,7 +17,7 @@ services:
       service: mongo
     networks:
       default:
-        ipv4_address: 10.5.0.6
+        ipv4_address: 10.5.0.51
 
   api_rest:
 
@@ -36,7 +36,7 @@ services:
     tty: true
     networks:
       default:
-        ipv4_address: 10.5.0.10
+        ipv4_address: 10.5.0.2
 
 networks:
   default:

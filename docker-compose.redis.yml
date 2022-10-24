@@ -9,7 +9,7 @@ services:
       service: redis
     networks:
       default:
-        ipv4_address: 10.5.0.5
+        ipv4_address: 10.5.0.50
 
 
 networks:

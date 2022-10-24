@@ -1,9 +1,7 @@
 import motor.motor_asyncio as motor
 
-from enum import Enum
 from os import getenv, environ
 from pymongo import MongoClient, errors
-# from loguru import logger
 
 from .parameters import parameters
 
@@ -33,7 +31,6 @@ class connector:
 
         except Exception as e:
 
-            # logger.error(f'Erro ao conectar com o mongo: {e}')
             print(f'Erro ao conectar com o mongo: {e}')
 
         return self.client
@@ -52,19 +49,15 @@ class connector:
             return True
 
         except errors.ServerSelectionTimeoutError as e:
-            # logger.error(f'{e}')
             print(f'{e}')
 
         except errors.InvalidOperation as e:
-            # logger.error(f'{e}')
             print(f'{e}')
 
         except AttributeError as e:
-            # logger.error(f'{e}')
             print(f'{e}')
 
         except Exception as e:
-            # logger.error(f'{e}')
             print(f'{e}')
 
         return False
