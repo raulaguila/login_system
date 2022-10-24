@@ -4,12 +4,12 @@ ___
 Create .env file with following parameters:
 ```bash
 # Redis infos
-REDIS_HOST='10.5.0.5'
+REDIS_HOST='10.5.0.50'
 REDIS_PORT='6379'
 REDIS_PASS='password123'
 
 # MongoDB infos
-MONGO_HOST='10.5.0.6'
+MONGO_HOST='10.5.0.51'
 MONGO_PORT='27017'
 MONGO_USER='admin'
 MONGO_PASS='password123'
@@ -40,7 +40,7 @@ JWT_PRIVATE_KEY=''
 JWT_PUBLIC_KEY=''
 
 # Specify system version
-SYS_VERSION='0.0.1'
+SYS_VERSION='0.0.2'
 ```
 ___
 ## Docker Network
