@@ -22,7 +22,6 @@ REDOC_ENDPOINT='/redocs'
 # Cookies keys
 COKIE_ACCESS_TOKEN='api_access_token'
 COKIE_REFRESH_TOKEN='api_refresh_token'
-COKIE_LOGGED_TOKEN='api_logged_in'
 
 #JWT infos
 ACCESS_TOKEN_EXPIRES_IN='15' # minutes

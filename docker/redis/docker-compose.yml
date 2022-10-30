@@ -7,7 +7,9 @@ services:
     container_name: docker_redis
     image: redis:latest
     restart: always
-    command: redis-server --requirepass ${REDIS_PASS}
+    command: redis-server --requirepass ${REDIS_PASS} --save 60 1
+    volumes:
+      - ./db:/data
     ports:
       - ${REDIS_PORT}:6379
     env_file:

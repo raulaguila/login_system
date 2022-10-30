@@ -13,7 +13,6 @@ from app.model import model_user
 
 COKIE_ACCESS_TOKEN = os.getenv('COKIE_ACCESS_TOKEN') if os.getenv('COKIE_ACCESS_TOKEN') else 'access_token'
 COKIE_REFRESH_TOKEN = os.getenv('COKIE_REFRESH_TOKEN') if os.getenv('COKIE_REFRESH_TOKEN') else  'refresh_token'
-COKIE_LOGGED_TOKEN = os.getenv('COKIE_LOGGED_TOKEN') if os.getenv('COKIE_LOGGED_TOKEN') else  'logged_in'
 
 
 class Settings(BaseModel):

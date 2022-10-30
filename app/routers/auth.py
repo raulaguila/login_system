@@ -79,7 +79,6 @@ async def login(payload: schema_user.LoginUserSchema, response: Response, Author
     # Store refresh and access tokens in cookie
     response.set_cookie(oauth2.COKIE_ACCESS_TOKEN, access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
     response.set_cookie(oauth2.COKIE_REFRESH_TOKEN, refresh_token, REFRESH_TOKEN_EXPIRES_IN * 60, REFRESH_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
-    response.set_cookie(oauth2.COKIE_LOGGED_TOKEN, 'True', ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, False, 'lax')
 
     # Send both access
     return {'status': 'success', 'access_token': access_token}
@@ -115,7 +114,6 @@ async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
     response.set_cookie(oauth2.COKIE_ACCESS_TOKEN, access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
-    response.set_cookie(oauth2.COKIE_LOGGED_TOKEN, 'True', ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, False, 'lax')
 
     return {'access_token': access_token}
 
@@ -124,6 +122,5 @@ async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(
 async def logout(response: Response, Authorize: oauth2.AuthJWT = Depends(), user_id: str = Depends(oauth2.require_user)):
 
     await Authorize.unset_jwt_cookies()
-    response.set_cookie(oauth2.COKIE_LOGGED_TOKEN, '', -1)
 
     return {'status': 'success'}
