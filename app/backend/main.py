@@ -4,7 +4,8 @@ load_dotenv()
 import os
 import time
 import aioredis
-import app.routers as routers
+
+from .routers import *
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
@@ -40,9 +41,9 @@ app = FastAPI(
 )
 
 
-app.include_router(routers.root.router)
-app.include_router(routers.auth.router)
-app.include_router(routers.user.router)
+app.include_router(root.router)
+app.include_router(auth.router)
+app.include_router(user.router)
 
 
 @app.exception_handler(Exception)

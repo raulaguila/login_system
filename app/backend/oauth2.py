@@ -7,8 +7,8 @@ from async_fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 from bson.objectid import ObjectId
 
-from app.database import connector
-from app.model import model_user
+from .database import connector
+from .model import model_user
 
 
 COKIE_ACCESS_TOKEN = os.getenv('COKIE_ACCESS_TOKEN') if os.getenv('COKIE_ACCESS_TOKEN') else 'access_token'

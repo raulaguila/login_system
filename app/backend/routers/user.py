@@ -4,11 +4,10 @@ from bson.objectid import ObjectId
 from pymongo import MongoClient
 
 from .. import oauth2
-
-from app.model import model_user
-from app.schemas import schema_user
-from app.database import get_connection
-from app.serializers.userSerializers import userResponseEntity
+from ..model import model_user
+from ..schemas import schema_user
+from ..database import get_connection
+from ..serializers.userSerializers import userResponseEntity
 
 
 router = APIRouter(

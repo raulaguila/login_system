@@ -4,12 +4,13 @@ from datetime import datetime, timedelta
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Response, status, Depends, HTTPException
 
-from app.database import get_connection
-from app.serializers import userEntity, userResponseEntity
 from .. import utils, oauth2
-from app.schemas import schema_user
+from ..database import get_connection
+from ..serializers import userEntity, userResponseEntity
+from ..schemas import schema_user
+from ..model import model_user
+
 from pymongo import MongoClient
-from app.model import model_user
 
 router = APIRouter(
     tags=['Auth'],

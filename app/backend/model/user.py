@@ -4,7 +4,7 @@ from typing import Optional
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 
-from app.serializers.userSerializers import userResponseEntity
+from ..serializers.userSerializers import userResponseEntity
 
 class userAlredyExist(Exception):
     pass
