@@ -53,7 +53,7 @@ async def exception_callback(request: Request, exc: Exception):
         'url': f'{request.url}',
         'path_params': request.path_params,
         'query_params': f'{request.query_params}',
-        # 'body': f'{(await request.body()).decode("utf-8")}',
+        # 'body': f'{(await request.json())}',
         'cookies': request.cookies
     }
 

@@ -56,6 +56,7 @@ async def create_user(payload: schema_user.CreateUserSchema, client: MongoClient
 async def login(payload: schema_user.LoginUserSchema, response: Response, Authorize: oauth2.AuthJWT = Depends(), client: MongoClient = Depends(get_connection)):
     # Check if the user exist
     pipeline = [{'$match': {'email': payload.email.lower()}}]
+
     user = await model_user.get_first(client, pipeline)
 
     if not user:

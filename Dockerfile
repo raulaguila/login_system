@@ -14,4 +14,4 @@ RUN pip install -r requirements.txt
 CMD [ "gunicorn", "app.backend.main:app", "--workers", "8", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:7707" ]
 
 # For development
-# CMD [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7707", "--reload" ]
+# CMD [ "uvicorn", "app.backend.main:app", "--host", "0.0.0.0", "--port", "7707", "--reload" ]
