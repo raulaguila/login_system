@@ -9,8 +9,8 @@ services:
     restart: always
     volumes:
       - ./db:/data/db
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
     ports:
       - ${MONGO_PORT}:27017
     environment:

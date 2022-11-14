@@ -18,6 +18,7 @@ MONGO_BASE='fastapi'
 # Documentation endpoints
 DOC_ENDPOINT='/docs'
 REDOC_ENDPOINT='/redocs'
+JSON_ENDPOINT='/openapi.json'
 
 # Cookies keys
 COKIE_ACCESS_TOKEN='api_access_token'
