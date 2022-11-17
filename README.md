@@ -41,6 +41,16 @@ JWT_PUBLIC_KEY=''
 
 # Specify system version
 SYS_VERSION='0.0.2'
+
+# Datas to config user params
+MIN_PASS_LENGTH='8'
+MIN_NAME_LENGTH='10'
+MIN_USER_LENGTH='5'
+
+# Datas to default admin user
+ADM_NAME='Administrator'
+ADM_USER='admin@admin.com'
+ADM_PASS='admin.2023'
 ```
 ___
 ## Docker Network

@@ -1,29 +1,44 @@
+import os
+
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, constr
+from pydantic import BaseModel, constr
+
+
+MIN_PASS_LENGTH = int(os.getenv('MIN_PASS_LENGTH') if os.getenv('MIN_PASS_LENGTH') else 8)
+MIN_NAME_LENGTH = int(os.getenv('MIN_NAME_LENGTH') if os.getenv('MIN_NAME_LENGTH') else 10)
+MIN_USER_LENGTH = int(os.getenv('MIN_USER_LENGTH') if os.getenv('MIN_USER_LENGTH') else 5)
 
 
 class UserBaseSchema(BaseModel):
-    name: constr(min_length=10)
-    email: EmailStr
-    photo: str | None = None
+    name: constr(min_length=MIN_NAME_LENGTH)
+    username: constr(min_length=MIN_USER_LENGTH)
+    # photo: str | None = None
+    # verified: bool = False
     role: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
 
     class Config:
         orm_mode = True
 
 
+class ResponseUserBaseSchema(UserBaseSchema):
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
 class CreateUserSchema(UserBaseSchema):
-    password: constr(min_length=8)
+    password: constr(min_length=MIN_PASS_LENGTH)
     passwordConfirm: str
-    verified: bool = False
+
+
+class UpdateUserSchema(UserBaseSchema):
+    password: constr(min_length=MIN_PASS_LENGTH) | None = None
+    passwordConfirm: str | None = None
 
 
 class LoginUserSchema(BaseModel):
-    email: EmailStr
-    password: constr(min_length=8)
+    username: constr(min_length=MIN_USER_LENGTH)
+    password: constr(min_length=MIN_PASS_LENGTH)
 
 
-class UserResponseSchema(UserBaseSchema):
+class UserResponseSchema(ResponseUserBaseSchema):
     id: str

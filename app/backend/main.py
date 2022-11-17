@@ -6,6 +6,7 @@ import time
 import aioredis
 
 from .routers import *
+from .utils import initialize_db
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
@@ -16,9 +17,9 @@ from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 
 
-doc_endpoint_1 = os.getenv('DOC_ENDPOINT')
-doc_endpoint_2 = os.getenv('REDOC_ENDPOINT')
-doc_endpoint_3 = os.getenv('JSON_ENDPOINT')
+doc_endpoint = os.getenv('DOC_ENDPOINT')
+redoc_endpoint = os.getenv('REDOC_ENDPOINT')
+json_endpoint = os.getenv('JSON_ENDPOINT')
 
 
 app = FastAPI(
@@ -33,10 +34,10 @@ app = FastAPI(
         max_age=1
     )],
     debug=False,
-    description=f"Documentations endpoints: {doc_endpoint_1} and {doc_endpoint_2}.",
-    docs_url=doc_endpoint_1,
-    redoc_url=doc_endpoint_2,
-    openapi_url=doc_endpoint_3,
+    description=f"Documentations endpoints: {doc_endpoint} and {redoc_endpoint}.",
+    docs_url=doc_endpoint,
+    redoc_url=redoc_endpoint,
+    openapi_url=json_endpoint,
     swagger_ui_parameters = {"docExpansion":"none"},
 )
 
@@ -69,6 +70,7 @@ async def exception_callback(request: Request, exc: Exception):
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
 
+
     start_time = time.time()
     response = await call_next(request)
     process_time = time.time() - start_time
@@ -88,6 +90,11 @@ async def startup_event():
         redis =  aioredis.from_url(f"redis://{os.environ['REDIS_HOST']}:{os.environ['REDIS_PORT']}", encoding="utf8", decode_responses=True)
 
     FastAPICache.init(RedisBackend(redis), prefix="fimis-cache")
+
+    try:
+        await initialize_db()
+    except Exception as e:
+        print(f"{e}")
 
 
 @app.on_event("shutdown")

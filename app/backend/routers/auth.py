@@ -1,12 +1,13 @@
 import os
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Response, status, Depends, HTTPException
 
 from .. import utils, oauth2
+from ..exceptions import *
 from ..database import get_connection
-from ..serializers import userEntity, userResponseEntity
+from ..serializers import userEntity
 from ..schemas import schema_user
 from ..model import model_user
 
@@ -21,73 +22,43 @@ ACCESS_TOKEN_EXPIRES_IN = int(os.getenv("ACCESS_TOKEN_EXPIRES_IN"))
 REFRESH_TOKEN_EXPIRES_IN = int(os.getenv("REFRESH_TOKEN_EXPIRES_IN"))
 
 
-@router.post('/register', status_code=status.HTTP_201_CREATED, response_model=schema_user.UserResponseSchema)
-# async def create_user(payload: schema_user.CreateUserSchema, logged: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
-async def create_user(payload: schema_user.CreateUserSchema, client: MongoClient = Depends(get_connection)):
-
-    # Compare password and passwordConfirm
-    if payload.password != payload.passwordConfirm:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Passwords do not match.')
-
-    #  Hash the password
-    payload.password = utils.hash_password(payload.password)
-    del payload.passwordConfirm
-    payload.role = 'admin'
-    payload.verified = True
-    payload.email = payload.email.lower()
-    payload.created_at = datetime.utcnow()
-    payload.updated_at = payload.created_at
-
-    try:
-
-        new_user = userResponseEntity(await model_user.insert(client, payload.dict()))
-        return new_user
-
-    except Exception as e:
-        error = e.__class__.__name__
-
-        if error == 'userAlredyExist':
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f'{e}')
-
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'{e}')
-
-
 @router.post('/login')
 async def login(payload: schema_user.LoginUserSchema, response: Response, Authorize: oauth2.AuthJWT = Depends(), client: MongoClient = Depends(get_connection)):
     # Check if the user exist
-    pipeline = [{'$match': {'email': payload.email.lower()}}]
+    try:
+        pipeline = [{'$match': {'username': payload.username.lower()}}]
 
-    user = await model_user.get_first(client, pipeline)
+        user = await model_user.get_first(client, pipeline)
 
-    if not user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Incorrect Email or Password')
+        if not user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Incorrect Username or Password')
 
-    # Check if user verified his email
-    if not user['verified']:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Please verify your email address')
+        # Check if the password is valid
+        if not utils.verify_password(payload.password, user['password']):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Incorrect Username or Password')
 
-    # Check if the password is valid
-    if not utils.verify_password(payload.password, user['password']):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Incorrect Email or Password')
+        user = userEntity(user)
 
-    user = userEntity(user)
+        # Create access token
+        access_token = await Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
 
-    # Create access token
-    access_token = await Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
+        # Create refresh token
+        refresh_token = await Authorize.create_refresh_token(subject=str(user["id"]), expires_time=timedelta(minutes=REFRESH_TOKEN_EXPIRES_IN))
 
-    # Create refresh token
-    refresh_token = await Authorize.create_refresh_token(subject=str(user["id"]), expires_time=timedelta(minutes=REFRESH_TOKEN_EXPIRES_IN))
+        # Store refresh and access tokens in cookie
+        response.set_cookie(oauth2.COKIE_ACCESS_TOKEN, access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
+        response.set_cookie(oauth2.COKIE_REFRESH_TOKEN, refresh_token, REFRESH_TOKEN_EXPIRES_IN * 60, REFRESH_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
 
-    # Store refresh and access tokens in cookie
-    response.set_cookie(oauth2.COKIE_ACCESS_TOKEN, access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
-    response.set_cookie(oauth2.COKIE_REFRESH_TOKEN, refresh_token, REFRESH_TOKEN_EXPIRES_IN * 60, REFRESH_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
+        # Send both access
+        return {'status': 'success', 'access_token': access_token}
+    except UserNotFound as e:
 
-    # Send both access
-    return {'status': 'success', 'access_token': access_token}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'{e}')
 
 
 @router.get('/refresh')
 async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(), client: MongoClient = Depends(get_connection)):
+
     try:
         await Authorize.jwt_refresh_token_required()
 
@@ -106,14 +77,13 @@ async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(
 
         access_token = await Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
 
+    except MissingTokenError:
+
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Please provide refresh token')
+
     except Exception as e:
 
-        error = e.__class__.__name__
-
-        if error == 'MissingTokenError':
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Please provide refresh token')
-
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
 
     response.set_cookie(oauth2.COKIE_ACCESS_TOKEN, access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
 

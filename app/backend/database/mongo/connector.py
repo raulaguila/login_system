@@ -18,7 +18,7 @@ class connector:
             params: parameters = parameters()
             params.host = environ['MONGO_HOST']
             params.port = int(environ['MONGO_PORT'])
-            params.database =  'db_octopus'
+            params.database = environ['MONGO_BASE']
 
             params.use_authenticator = bool(getenv('MONGO_PASS') and getenv('MONGO_USER'))
 

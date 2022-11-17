@@ -31,8 +31,8 @@ services:
       - 7707:7707
     volumes:
       - .:/app
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     tty: true
     networks:
       default:

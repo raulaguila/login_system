@@ -1,18 +1,24 @@
 import os
 import base64
 
+from datetime import timedelta
+from pymongo import MongoClient
 from typing import List
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Response
 from async_fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 from bson.objectid import ObjectId
 
+from .exceptions import *
 from .database import connector
 from .model import model_user
+from .serializers import userEntity
 
 
 COKIE_ACCESS_TOKEN = os.getenv('COKIE_ACCESS_TOKEN') if os.getenv('COKIE_ACCESS_TOKEN') else 'access_token'
 COKIE_REFRESH_TOKEN = os.getenv('COKIE_REFRESH_TOKEN') if os.getenv('COKIE_REFRESH_TOKEN') else  'refresh_token'
+ACCESS_TOKEN_EXPIRES_IN = int(os.getenv("ACCESS_TOKEN_EXPIRES_IN"))
+REFRESH_TOKEN_EXPIRES_IN = int(os.getenv("REFRESH_TOKEN_EXPIRES_IN"))
 
 
 class Settings(BaseModel):
@@ -32,14 +38,6 @@ def get_config():
     return Settings()
 
 
-class NotVerified(Exception):
-    pass
-
-
-class UserNotFound(Exception):
-    pass
-
-
 async def require_user(Authorize: AuthJWT = Depends()):
 
     try:
@@ -54,25 +52,22 @@ async def require_user(Authorize: AuthJWT = Depends()):
         if not user:
             raise UserNotFound()
 
-        if not user["verified"]:
-            raise NotVerified()
+        # if not user["verified"]:
+        #     raise NotVerified()
+
+    except UserNotFound:
+
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='The user does not exist.')
+
+    # except NotVerified:
+
+    #     raise HTTPException(tatus_code=status.HTTP_401_UNAUTHORIZED, detail='Please verify your account.')
+
+    except MissingTokenError:
+
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='You are not logged in.')
 
     except Exception as e:
-        error = e.__class__.__name__
-
-        match error:
-
-            case 'MissingTokenError':
-
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='You are not logged in.')
-
-            case 'UserNotFound':
-
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='The user does not exist.')
-
-            case 'NotVerified':
-
-                raise HTTPException(tatus_code=status.HTTP_401_UNAUTHORIZED, detail='Please verify your account.')
 
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token is invalid or has expired.')
 
