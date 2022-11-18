@@ -14,7 +14,7 @@ async def get_connection() -> AsyncGenerator:
 
     except OperationFailure as e:
 
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"{e}")
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"{e}")
 
     try:
         try:

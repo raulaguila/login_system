@@ -40,9 +40,9 @@ async def create_user(payload: schema_user.CreateUserSchema, requester: dict = D
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Passwords do not match.')
 
     #  Hash the password
-    payload.password = utils.hash_password(payload.password)
+    payload.password = await utils.hash_password(payload.password)
     del payload.passwordConfirm
-    payload.role = 'admin'
+    # payload.role = 'admin'
     payload.username = payload.username.lower()
     payload = payload.dict()
     payload['created_at'] = datetime.now()
@@ -51,11 +51,14 @@ async def create_user(payload: schema_user.CreateUserSchema, requester: dict = D
     try:
 
         new_user = await model_user.insert(client, payload)
+        if not new_user:
+            raise UserAlredyExist()
+
         return userResponseEntity(new_user)
 
     except UserAlredyExist as e:
 
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f'{e}')
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='Username associated with another account')
 
     except Exception as e:
 
@@ -91,11 +94,11 @@ async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Passwords do not match.')
 
     try:
+        del payload.passwordConfirm
         if payload.password:
-            payload.password = utils.hash_password(payload.password)
+            payload.password = await utils.hash_password(payload.password)
         else:
             del payload.password
-        del payload.passwordConfirm
 
         if not payload.role:
             del payload.role
@@ -115,6 +118,9 @@ async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester:
         filter = {'_id': ObjectId(id)}
         user = await model_user.update(client, filter, payload)
 
+        if not user:
+            raise UserNotFound()
+
         return userResponseEntity(user)
 
     except UserNotFound as e:
@@ -125,9 +131,6 @@ async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester:
 @router.delete('/{id}', status_code=status.HTTP_200_OK)
 async def delete_user(id: str, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
 
-    if not ObjectId.is_valid(id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid ID.')
-
     try:
 
         requester = userResponseEntity(requester)
@@ -136,10 +139,12 @@ async def delete_user(id: str, requester: dict = Depends(oauth2.require_user), c
 
         filter = {'_id': ObjectId(id)}
 
-        await model_user.delete(client, filter)
+        resp = await model_user.delete(client, filter)
+        if not resp:
+            raise UserNotFound()
 
         return Response(status_code=status.HTTP_200_OK)
 
     except UserNotFound as e:
 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'{e}')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')

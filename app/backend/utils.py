@@ -4,22 +4,28 @@ from datetime import datetime
 from pymongo import MongoClient
 from passlib.context import CryptContext
 
+from .exceptions import *
 from .database import *
 from .schemas.user import CreateUserSchema
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 ADM_NAME = os.getenv('ADM_NAME') if os.getenv('ADM_NAME') else 'Administrator'
 ADM_USER = os.getenv('ADM_USER') if os.getenv('ADM_USER') else 'admin@admin.com'
 ADM_PASS = os.getenv('ADM_PASS') if os.getenv('ADM_PASS') else 'admin.2023'
 
 
-def hash_password(password: str):
+async def hash_password(password: str):
+
     return pwd_context.hash(password)
 
 
-def verify_password(password: str, hashed_password: str):
-    return pwd_context.verify(password, hashed_password)
+async def verify_password(password: str, hashed_password: str):
+
+    if not pwd_context.verify(password, hashed_password):
+
+        raise WrongUserOrPassword()
 
 
 async def initialize_db():
@@ -29,8 +35,9 @@ async def initialize_db():
         adm_user = CreateUserSchema(
             name = ADM_NAME,
             username = ADM_USER,
-            password = hash_password(ADM_PASS),
-            passwordConfirm= ADM_PASS,
+            password = await hash_password(ADM_PASS),
+            passwordConfirm = ADM_PASS,
+            status = True,
             role = 'admin'
         )
 
@@ -47,6 +54,7 @@ async def initialize_db():
         )
 
     session = connector()
-    await created_admin(await session.connect())
+    client: MongoClient = await session.connect()
+    await created_admin(client)
     await asyncio.sleep(2)
     await session.disconnect()

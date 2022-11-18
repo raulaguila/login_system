@@ -1,0 +1,14 @@
+Formação:
+    - Técnico em Informática: IFRJ
+    - Graduação em Engenharia da Computação: FUCAPI
+
+Conhecimentos:
+    - Conhecimentos nas linguagens: Python, Java, C/C++, Delphi;
+    - Conhecimentos em visão computacional;
+    - Conhecimentos em construção de RPA Web e WPA de android usando visão computacional;
+    - Conhecimentos avançados em construção de APIs em Python com FastAPI;
+    - Conhecimentos básicos nas linguagens: Javascript, HTML, CSS;
+    - Conhecimentos básicos em construção de APIs em Java (Spring Boot);
+    - Banco de dados NoSQL: MongoDB, Redis;
+    - Banco de dados SQL: MariaDB, SQL Server, PostgreSQL, MySQL;
+    - Serviço de messageria: MQTT;

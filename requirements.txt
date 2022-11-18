@@ -3,13 +3,13 @@
 
 ###### Requirements with version specifiers (To production) ######
 fastapi==0.86
-fastapi-cache2==0.1.8
+fastapi-cache2==0.1.9
 async-fastapi-jwt-auth[asymmetric]==0.5.1
+redis==4.3.4
 motor==3.1.1
 python-dateutil==2.8.2
 python-dotenv==0.21.0
 urllib3==1.26.12
-aioredis==2.0.1
 gunicorn==20.1.0
 passlib[bcrypt]==1.7.4
 pydantic[email]==1.10.2

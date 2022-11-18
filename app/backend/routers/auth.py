@@ -31,11 +31,14 @@ async def login(payload: schema_user.LoginUserSchema, response: Response, Author
         user = await model_user.get_first(client, pipeline)
 
         if not user:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Incorrect Username or Password')
+            raise WrongUserOrPassword()
 
-        # Check if the password is valid
-        if not utils.verify_password(payload.password, user['password']):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Incorrect Username or Password')
+        # Check if the password is valid, except WrongPassword if is not valid
+        await utils.verify_password(payload.password, user['password'])
+
+        # Check if user is activated
+        if not user['status']:
+            raise UserNotActivated()
 
         user = userEntity(user)
 
@@ -51,9 +54,18 @@ async def login(payload: schema_user.LoginUserSchema, response: Response, Author
 
         # Send both access
         return {'status': 'success', 'access_token': access_token}
+
     except UserNotFound as e:
 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'{e}')
+
+    except UserNotActivated:
+
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='The user is deactivated')
+
+    except WrongUserOrPassword:
+
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Incorrect Username or Password')
 
 
 @router.get('/refresh')
@@ -71,11 +83,12 @@ async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(
         pipeline = [{'$match': {'_id': ObjectId(str(user_id))}}]
         user = userEntity(await model_user.get_first(client, pipeline))
 
-        if not user:
-
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='The user belonging to this token no logger exist')
-
         access_token = await Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
+        refresh_token = await Authorize.create_refresh_token(subject=str(user["id"]), expires_time=timedelta(minutes=REFRESH_TOKEN_EXPIRES_IN))
+
+    except UserNotFound:
+
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='The user belonging to this token no logger exist')
 
     except MissingTokenError:
 
@@ -86,12 +99,13 @@ async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
 
     response.set_cookie(oauth2.COKIE_ACCESS_TOKEN, access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
+    response.set_cookie(oauth2.COKIE_REFRESH_TOKEN, refresh_token, REFRESH_TOKEN_EXPIRES_IN * 60, REFRESH_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
 
     return {'access_token': access_token}
 
 
 @router.get('/logout', status_code=status.HTTP_200_OK)
-async def logout(response: Response, Authorize: oauth2.AuthJWT = Depends(), user_id: str = Depends(oauth2.require_user)):
+async def logout(Authorize: oauth2.AuthJWT = Depends(), requester: str = Depends(oauth2.require_user)):
 
     await Authorize.unset_jwt_cookies()
 

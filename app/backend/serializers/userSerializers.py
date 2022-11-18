@@ -4,6 +4,7 @@ def userEntity(user) -> dict:
         "name": user["name"],
         "username": user["username"],
         "role": user["role"],
+        "status": user["status"],
         # "photo": user["photo"],
         # "verified": user["verified"],
         "password": user["password"],
@@ -18,6 +19,7 @@ def userResponseEntity(user) -> dict:
         "name": user["name"],
         "username": user["username"],
         "role": user["role"],
+        "status": user["status"],
         # "photo": user["photo"],
         "created_at": user["created_at"],
         "updated_at": user["updated_at"]

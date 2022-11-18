@@ -1,12 +1,34 @@
 import os
+import asyncio
 
 from typing import Optional
+from pymongo import ASCENDING
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from pymongo.results import UpdateResult, DeleteResult
 
-from ..exceptions import *
 from ..serializers.userSerializers import userResponseEntity
+
+
+async def create_indexes(client: MongoClient) -> bool:
+
+    try:
+
+        keys: list = ['username', 'status', 'role']
+
+        for key in keys:
+
+            await client[os.getenv('MONGO_BASE')]['users'].create_index([(key, ASCENDING)], background=False)
+
+        await asyncio.sleep(1e-3)
+
+        return True
+
+    except Exception as e:
+
+        print(f"Error to create index: {e}")
+
+    return False
 
 
 async def get_all(client: MongoClient, pipeline: list) -> Optional[list]:
@@ -24,7 +46,7 @@ async def get_first(client: MongoClient, pipeline: list) -> Optional[dict]:
     async for doc in client[os.getenv('MONGO_BASE')]['users'].aggregate(pipeline, allowDiskUse=True):
         return doc
 
-    raise UserNotFound('User not found.')
+    return False
 
 
 async def insert(client: MongoClient, document: dict) -> dict:
@@ -38,10 +60,11 @@ async def insert(client: MongoClient, document: dict) -> dict:
 
     if result.upserted_id is not None:
 
+        await create_indexes(client=client)
         pipeline = [{'$match': {'_id': ObjectId(str(result.upserted_id))}}]
         return await get_first(client, pipeline)
 
-    raise UserAlredyExist('An account with this username already exists.')
+    return False
 
 
 async def update(client: MongoClient, filter: dict, update: dict) -> dict:
@@ -54,10 +77,11 @@ async def update(client: MongoClient, filter: dict, update: dict) -> dict:
 
     if result.modified_count > 0:
 
+        await create_indexes(client=client)
         pipeline = [{'$match': filter}]
         return await get_first(client, pipeline)
 
-    raise UserNotFound('User not found.')
+    return False
 
 
 async def delete(client: MongoClient, filter: dict) -> dict:
@@ -66,8 +90,4 @@ async def delete(client: MongoClient, filter: dict) -> dict:
         filter=filter
     )
 
-    if deleted.deleted_count > 0:
-
-        return True
-
-    raise UserNotFound('User not found.')
+    return deleted.deleted_count > 0

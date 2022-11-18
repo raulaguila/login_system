@@ -3,18 +3,18 @@ load_dotenv()
 
 import os
 import time
-import aioredis
 
-from .routers import *
-from .utils import initialize_db
-
-from fastapi import FastAPI, Request, status
+from redis import asyncio as aioredis
+from fastapi import FastAPI, Request, status, Response
 from fastapi.responses import JSONResponse
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
+
+from .routers import *
+from .utils import initialize_db
 
 
 doc_endpoint = os.getenv('DOC_ENDPOINT')
@@ -55,7 +55,7 @@ async def exception_callback(request: Request, exc: Exception):
         'path_params': request.path_params,
         'query_params': f'{request.query_params}',
         # 'body': f'{(await request.json())}',
-        'cookies': request.cookies
+        # 'cookies': request.cookies
     }
 
     return JSONResponse(
@@ -70,11 +70,11 @@ async def exception_callback(request: Request, exc: Exception):
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
 
-
     start_time = time.time()
-    response = await call_next(request)
+    response: Response = await call_next(request)
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
+    response.headers["X-Version"] = f"{os.getenv('SYS_VERSION')}"
 
     return response
 

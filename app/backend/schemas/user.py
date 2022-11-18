@@ -12,9 +12,10 @@ MIN_USER_LENGTH = int(os.getenv('MIN_USER_LENGTH') if os.getenv('MIN_USER_LENGTH
 class UserBaseSchema(BaseModel):
     name: constr(min_length=MIN_NAME_LENGTH)
     username: constr(min_length=MIN_USER_LENGTH)
+    role: str
+    status: bool
     # photo: str | None = None
     # verified: bool = False
-    role: str | None = None
 
     class Config:
         orm_mode = True
