@@ -14,7 +14,8 @@ class UserBaseSchema(BaseModel):
     username: constr(min_length=MIN_USER_LENGTH)
     role: str
     status: bool
-    # photo: str | None = None
+    email: str | None = None
+    photo: str | None = None
     # verified: bool = False
 
     class Config:

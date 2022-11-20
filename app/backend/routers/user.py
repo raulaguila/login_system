@@ -103,6 +103,12 @@ async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester:
         if not payload.role:
             del payload.role
 
+        if not payload.photo:
+            del payload.photo
+
+        if not payload.email:
+            del payload.email
+
         try:
             pipeline = [{'$match': {'username': str(payload.username).lower()}}]
             user = userResponseEntity(await model_user.get_first(client, pipeline))
