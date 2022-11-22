@@ -39,8 +39,9 @@ JWT_PRIVATE_KEY=''
 # 3 - Copy the key converted and paste on JWT_PUBLIC_KEY value
 JWT_PUBLIC_KEY=''
 
-# Specify system version
+# System infos
 SYS_VERSION='0.0.2'
+SYS_LANGUAGE='pt_BR'
 
 # Datas to config user params
 MIN_PASS_LENGTH='8'

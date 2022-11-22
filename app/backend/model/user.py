@@ -7,7 +7,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from pymongo.results import UpdateResult, DeleteResult
 
-from ..serializers.userSerializers import userResponseEntity
+from ..serializers.userSerializers import userResponseListEntity
 
 
 async def create_indexes(client: MongoClient) -> bool:
@@ -36,9 +36,9 @@ async def get_all(client: MongoClient, pipeline: list) -> Optional[list]:
     docs = list()
 
     async for doc in client[os.getenv('MONGO_BASE')]['users'].aggregate(pipeline, allowDiskUse=True):
-        docs.append(userResponseEntity(doc))
+        docs.append(doc)
 
-    return docs
+    return userResponseListEntity(docs)
 
 
 async def get_first(client: MongoClient, pipeline: list) -> Optional[dict]:
@@ -60,9 +60,10 @@ async def insert(client: MongoClient, document: dict) -> dict:
 
     if result.upserted_id is not None:
 
-        await create_indexes(client=client)
-        pipeline = [{'$match': {'_id': ObjectId(str(result.upserted_id))}}]
-        return await get_first(client, pipeline)
+        if await create_indexes(client=client):
+
+            pipeline = [{'$match': {'_id': ObjectId(str(result.upserted_id))}}]
+            return await get_first(client, pipeline)
 
     return False
 
@@ -77,9 +78,10 @@ async def update(client: MongoClient, filter: dict, update: dict) -> dict:
 
     if result.modified_count > 0:
 
-        await create_indexes(client=client)
-        pipeline = [{'$match': filter}]
-        return await get_first(client, pipeline)
+        if await create_indexes(client=client):
+
+            pipeline = [{'$match': filter}]
+            return await get_first(client, pipeline)
 
     return False
 

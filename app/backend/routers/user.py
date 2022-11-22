@@ -32,23 +32,22 @@ async def get_all(requester: dict = Depends(oauth2.require_user), client: MongoC
 
 @router.post('/new', status_code=status.HTTP_201_CREATED, response_model=schema_user.UserResponseSchema)
 async def create_user(payload: schema_user.CreateUserSchema, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
-# async def create_user(payload: schema_user.CreateUserSchema, client: MongoClient = Depends(get_connection)):
-
-    # Compare password and passwordConfirm
-    if payload.password != payload.passwordConfirm:
-
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Passwords do not match.')
-
-    #  Hash the password
-    payload.password = await utils.hash_password(payload.password)
-    del payload.passwordConfirm
-    # payload.role = 'admin'
-    payload.username = payload.username.lower()
-    payload = payload.dict()
-    payload['created_at'] = datetime.now()
-    payload['updated_at'] = payload['created_at']
 
     try:
+
+        # Compare password and passwordConfirm
+        if payload.password != payload.passwordConfirm:
+
+            raise PasswordsNotMatch()
+
+        #  Hash the password
+        payload.password = await utils.hash_password(payload.password)
+        del payload.passwordConfirm
+        # payload.role = 'admin'
+        payload.username = payload.username.lower()
+        payload = payload.dict()
+        payload['created_at'] = datetime.now()
+        payload['updated_at'] = payload['created_at']
 
         new_user = await model_user.insert(client, payload)
         if not new_user:
@@ -56,9 +55,14 @@ async def create_user(payload: schema_user.CreateUserSchema, requester: dict = D
 
         return userResponseEntity(new_user)
 
+
+    except PasswordsNotMatch as e:
+
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation())
+
     except UserAlredyExist as e:
 
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='Username associated with another account')
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.translation())
 
     except Exception as e:
 
@@ -68,32 +72,37 @@ async def create_user(payload: schema_user.CreateUserSchema, requester: dict = D
 @router.get('/{id}', response_model=schema_user.UserResponseSchema, status_code=status.HTTP_200_OK)
 async def get_user(id: str, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
 
-    if not ObjectId.is_valid(id):
-
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid ID.')
-
     try:
+
+        if not ObjectId.is_valid(id):
+            raise InvalidObjectId()
 
         pipeline = [{'$match': {'_id': ObjectId(id)}}]
         user = await model_user.get_first(client, pipeline)
+        if not user:
+            raise UserNotFound()
 
         return userResponseEntity(user)
 
+    except InvalidObjectId as e:
+
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation())
+
     except UserNotFound as e:
 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'{e}')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation())
 
 
 @router.put('/{id}', response_model=schema_user.UserResponseSchema, status_code=status.HTTP_200_OK)
 async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
 
-    if not ObjectId.is_valid(id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid ID.')
-
-    if payload.password and payload.password != payload.passwordConfirm:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Passwords do not match.')
-
     try:
+        if not ObjectId.is_valid(id):
+            raise InvalidObjectId()
+
+        if payload.password and payload.password != payload.passwordConfirm:
+            raise PasswordsNotMatch()
+
         del payload.passwordConfirm
         if payload.password:
             payload.password = await utils.hash_password(payload.password)
@@ -109,13 +118,12 @@ async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester:
         if not payload.email:
             del payload.email
 
-        try:
-            pipeline = [{'$match': {'username': str(payload.username).lower()}}]
-            user = userResponseEntity(await model_user.get_first(client, pipeline))
+        pipeline = [{'$match': {'username': str(payload.username).lower()}}]
+        user = await model_user.get_first(client, pipeline)
+        if user:
+            user = userResponseEntity(user)
             if user['id'] != id:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Username associated with another account.')
-        except UserNotFound:
-            pass
+                raise UserAlredyExist()
 
         payload.username = payload.username.lower()
         payload = payload.dict()
@@ -129,9 +137,13 @@ async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester:
 
         return userResponseEntity(user)
 
+    except (InvalidObjectId, UserAlredyExist, PasswordsNotMatch) as e:
+
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation())
+
     except UserNotFound as e:
 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'{e}')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation())
 
 
 @router.delete('/{id}', status_code=status.HTTP_200_OK)
@@ -141,7 +153,7 @@ async def delete_user(id: str, requester: dict = Depends(oauth2.require_user), c
 
         requester = userResponseEntity(requester)
         if requester['id'] == id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Can\'t delete yourself.')
+            raise UserCantDeleteYourself()
 
         filter = {'_id': ObjectId(id)}
 
@@ -151,6 +163,10 @@ async def delete_user(id: str, requester: dict = Depends(oauth2.require_user), c
 
         return Response(status_code=status.HTTP_200_OK)
 
+    except UserCantDeleteYourself as e:
+
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.translation())
+
     except UserNotFound as e:
 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation())

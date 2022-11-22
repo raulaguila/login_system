@@ -25,7 +25,7 @@ async def verify_password(password: str, hashed_password: str):
 
     if not pwd_context.verify(password, hashed_password):
 
-        raise WrongUserOrPassword()
+        raise UserOrPasswordWrong()
 
 
 async def initialize_db():
@@ -56,5 +56,5 @@ async def initialize_db():
     session = connector()
     client: MongoClient = await session.connect()
     await created_admin(client)
-    await asyncio.sleep(2)
+    await asyncio.sleep(0.5)
     await session.disconnect()

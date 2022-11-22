@@ -3,6 +3,9 @@ import os
 from fastapi import APIRouter, Response, status
 from fastapi.responses import RedirectResponse
 
+from ..exceptions import *
+
+
 router = APIRouter(
     tags=['Root']
 )

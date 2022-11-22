@@ -1,0 +1,34 @@
+{
+	"pt_BR": {
+		"exceptions": {
+			"UserNotFound": "Usuário não encontrado",
+			"UserNotVerified": "Por favor verifique sua conta",
+			"UserAlredyExist": "Nome do usuário associado com outra conta",
+			"UserNotActivated": "O usuário está desativado",
+			"UserOrPasswordWrong": "Nome de usuário ou senhas incorretos",
+			"UserCantDeleteYourself": "Não pode deletar a si mesmo",
+
+			"TokenError": "Não foi possível atualizar o token de acesso",
+			"PasswordsNotMatch": "As senhas não coincidem",
+			"LanguageUnsupported": "Idioma não suportado",
+			"MissingTokenError": "Você não está logado",
+			"InvalidObjectId": "ID inválido"
+		}
+	},
+	"en_US": {
+		"exceptions": {
+			"UserNotFound": "User not found",
+			"UserNotVerified": "Please verify your account",
+			"UserAlredyExist": "Username associated with another account",
+			"UserNotActivated": "The user is deactivated",
+			"UserOrPasswordWrong": "Incorrect Username or Password",
+			"UserCantDeleteYourself": "Can't delete yourself",
+
+			"TokenError": "Could not refresh access token",
+			"PasswordsNotMatch": "Passwords do not match",
+			"LanguageUnsupported": "Language not supported",
+			"MissingTokenError": "You are not logged in",
+			"InvalidObjectId": "ID invalid"
+		}
+	}
+}

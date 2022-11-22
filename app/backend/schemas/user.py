@@ -4,9 +4,9 @@ from datetime import datetime
 from pydantic import BaseModel, constr
 
 
-MIN_PASS_LENGTH = int(os.getenv('MIN_PASS_LENGTH') if os.getenv('MIN_PASS_LENGTH') else 8)
-MIN_NAME_LENGTH = int(os.getenv('MIN_NAME_LENGTH') if os.getenv('MIN_NAME_LENGTH') else 10)
-MIN_USER_LENGTH = int(os.getenv('MIN_USER_LENGTH') if os.getenv('MIN_USER_LENGTH') else 5)
+MIN_PASS_LENGTH = int(os.getenv('MIN_PASS_LENGTH')) if os.getenv('MIN_PASS_LENGTH') else 8
+MIN_NAME_LENGTH = int(os.getenv('MIN_NAME_LENGTH')) if os.getenv('MIN_NAME_LENGTH') else 10
+MIN_USER_LENGTH = int(os.getenv('MIN_USER_LENGTH')) if os.getenv('MIN_USER_LENGTH') else 5
 
 
 class UserBaseSchema(BaseModel):

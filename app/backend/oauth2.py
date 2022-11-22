@@ -54,23 +54,23 @@ async def require_user(Authorize: AuthJWT = Depends()):
             raise UserNotActivated()
 
         # if not user["verified"]:
-        #     raise NotVerified()
+        #     raise UserNotVerified()
 
-    except UserNotFound:
+    except UserNotFound as e:
 
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='The user does not exist.')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation())
 
-    # except NotVerified:
+    # except UserNotVerified:
 
     #     raise HTTPException(tatus_code=status.HTTP_401_UNAUTHORIZED, detail='Please verify your account.')
 
-    except UserNotActivated:
+    except UserNotActivated as e:
 
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='The user is deactivated')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation())
 
-    except MissingTokenError:
+    except MissingTokenError as e:
 
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='You are not logged in.')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation())
 
     except Exception as e:
 

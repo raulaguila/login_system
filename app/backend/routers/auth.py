@@ -7,9 +7,9 @@ from fastapi import APIRouter, Response, status, Depends, HTTPException
 from .. import utils, oauth2
 from ..exceptions import *
 from ..database import get_connection
-from ..serializers import userEntity
 from ..schemas import schema_user
 from ..model import model_user
+from ..serializers.userSerializers import userEntity
 
 from pymongo import MongoClient
 
@@ -31,7 +31,7 @@ async def login(payload: schema_user.LoginUserSchema, response: Response, Author
         user = await model_user.get_first(client, pipeline)
 
         if not user:
-            raise WrongUserOrPassword()
+            raise UserOrPasswordWrong()
 
         # Check if the password is valid, except WrongPassword if is not valid
         await utils.verify_password(payload.password, user['password'])
@@ -55,17 +55,13 @@ async def login(payload: schema_user.LoginUserSchema, response: Response, Author
         # Send both access
         return {'status': 'success', 'access_token': access_token}
 
-    except UserNotFound as e:
+    except UserNotActivated as e:
 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'{e}')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation())
 
-    except UserNotActivated:
+    except UserOrPasswordWrong as e:
 
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='The user is deactivated')
-
-    except WrongUserOrPassword:
-
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Incorrect Username or Password')
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation())
 
 
 @router.get('/refresh')
@@ -78,21 +74,24 @@ async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(
 
         if not user_id:
 
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not refresh access token')
+            raise TokenError()
 
         pipeline = [{'$match': {'_id': ObjectId(str(user_id))}}]
-        user = userEntity(await model_user.get_first(client, pipeline))
+        user = await model_user.get_first(client, pipeline)
+        if not user:
+            UserNotFound()
+        user = userEntity(user)
 
         access_token = await Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
         refresh_token = await Authorize.create_refresh_token(subject=str(user["id"]), expires_time=timedelta(minutes=REFRESH_TOKEN_EXPIRES_IN))
 
-    except UserNotFound:
+    except (UserNotFound, TokenError) as e:
 
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='The user belonging to this token no logger exist')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation())
 
-    except MissingTokenError:
+    except MissingTokenError as e:
 
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Please provide refresh token')
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation())
 
     except Exception as e:
 
