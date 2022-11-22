@@ -1,7 +1,7 @@
 import os
 
 from datetime import datetime
-from pydantic import BaseModel, constr
+from pydantic import BaseModel, constr, EmailStr
 
 
 MIN_PASS_LENGTH = int(os.getenv('MIN_PASS_LENGTH')) if os.getenv('MIN_PASS_LENGTH') else 8
@@ -11,10 +11,10 @@ MIN_USER_LENGTH = int(os.getenv('MIN_USER_LENGTH')) if os.getenv('MIN_USER_LENGT
 
 class UserBaseSchema(BaseModel):
     name: constr(min_length=MIN_NAME_LENGTH)
-    username: constr(min_length=MIN_USER_LENGTH)
+    username: constr(min_length=MIN_USER_LENGTH, to_lower=True)
     role: str
     status: bool
-    email: str | None = None
+    email: EmailStr | None = None
     photo: str | None = None
     # verified: bool = False
 

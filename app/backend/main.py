@@ -38,7 +38,7 @@ app = FastAPI(
     docs_url=doc_endpoint,
     redoc_url=redoc_endpoint,
     openapi_url=json_endpoint,
-    swagger_ui_parameters = {"docExpansion":"none"},
+    swagger_ui_parameters = {"docExpansion":"none"}
 )
 
 
