@@ -20,7 +20,7 @@ router = APIRouter(
 async def get_language():
 
     try:
-
+        dotenv.load_dotenv(override=True)
         return langResponseEntity(os.getenv('SYS_LANGUAGE'))
 
     except Exception as e:
