@@ -32,5 +32,22 @@
 			"MissingTokenError": "You are not logged in",
 			"InvalidObjectId": "ID invalid"
 		}
+	},
+	"es_ES": {
+		"language": "Español [España]",
+		"exceptions": {
+			"UserNotFound": "Usuario no encontrado",
+			"UserNotVerified": "Por favor, verifique su cuenta",
+			"UserAlredyExist": "Nombre de usuario asociado a otra cuenta",
+			"UserNotActivated": "El usuario está desactivado",
+			"UserOrPasswordWrong": "Nombre de usuario o contraseña incorrecta",
+			"UserCantDeleteYourself": "No puedes eliminar a ti mismo",
+
+			"TokenError": "No se pudo actualizar el token de acceso",
+			"PasswordsNotMatch": "Las contraseñas no coinciden",
+			"LanguageUnsupported": "Idioma no admitido",
+			"MissingTokenError": "Usted no se ha identificado",
+			"InvalidObjectId": "ID inválido"
+		}
 	}
 }

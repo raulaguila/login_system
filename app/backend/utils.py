@@ -5,7 +5,7 @@ from pymongo import MongoClient
 from passlib.context import CryptContext
 
 from .exceptions import *
-from .database import *
+from .database import connector
 from .schemas.user import CreateUserSchema
 
 

@@ -28,7 +28,29 @@ async def get_language():
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
 
 
-@router.put('/')
+
+@router.get('/all', response_model=schema_lang.SupportedLanguagesSchema)
+async def get_supported_languages():
+
+    try:
+
+        f = open(os.path.join(os.getcwd(), 'lang.json'))
+        langs: dict = json.load(f)
+
+        ret = schema_lang.SupportedLanguagesSchema (
+            languages=list(langs.keys())
+        )
+
+        f.close()
+
+        return ret
+
+    except Exception as e:
+
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
+
+
+@router.put('/', response_model=None)
 async def set_language(lang: schema_lang.LanguageBaseSchema):
 
     try:
