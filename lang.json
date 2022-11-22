@@ -1,5 +1,6 @@
 {
 	"pt_BR": {
+		"language": "Português [Brasil]",
 		"exceptions": {
 			"UserNotFound": "Usuário não encontrado",
 			"UserNotVerified": "Por favor verifique sua conta",
@@ -16,6 +17,7 @@
 		}
 	},
 	"en_US": {
+		"language": "English [US]",
 		"exceptions": {
 			"UserNotFound": "User not found",
 			"UserNotVerified": "Please verify your account",
