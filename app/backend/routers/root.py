@@ -2,6 +2,7 @@ import os
 
 from fastapi import APIRouter, Response, status
 from fastapi.responses import RedirectResponse
+from fastapi_cache.decorator import cache
 
 from ..exceptions import *
 
@@ -19,6 +20,7 @@ async def documentation():
 
 
 @router.get('/ping')
+@cache(expire=60)
 async def ping():
 
     return Response(status_code=status.HTTP_200_OK)
