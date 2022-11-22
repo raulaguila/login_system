@@ -5,7 +5,7 @@ services:
   redis:
 
     container_name: docker_redis
-    image: redis:latest
+    image: redis:7.0.5
     restart: always
     command: redis-server --requirepass ${REDIS_PASS} --save 60 1
     volumes:
