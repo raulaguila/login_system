@@ -1,7 +1,8 @@
 # API Rest - Login System
 ___
 ## Create .env file
-Create .env file with following parameters, and generate JWT keys:
+
+Create .env file with following parameters, and generate JWT Private/Public keys:
 ```bash
 # Redis infos
 REDIS_HOST='10.5.0.50' # IP from docker, dont change
