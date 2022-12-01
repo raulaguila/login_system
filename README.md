@@ -1,9 +1,9 @@
-# API Rest - Login System
+# <center> API Rest - Login System </center>
 ___
-## __Newsletter__
-- Language system:
-  - Now the user's language is saved in the cookie so that each user can choose their language, before when a user changed the language a global variable was changed that changed the language of all users.
-  - The default API language must be defined in the .env file and when the user changes the language, it will change in the cookie.
+## <center> Newsletter </center>
+- `30/11/2022` Now the user's language is saved in the cookie so that each user can choose their language, before when a user changed the language a global variable was changed that changed the language of all users.
+- `30/11/2022` The default API language must be defined in the .env file and when the user changes the language, it will change in the cookie.
+
 
 ___
 ## Create docker network
