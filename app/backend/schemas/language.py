@@ -3,8 +3,5 @@ from pydantic import BaseModel
 
 
 class LanguageBaseSchema(BaseModel):
+    code: str
     language: str
-
-
-class SupportedLanguagesSchema(BaseModel):
-    languages: List[str]

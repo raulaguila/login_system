@@ -1,4 +1,5 @@
-def langResponseEntity(lang: str) -> dict:
+def langResponseEntity(code: str, language: str) -> dict:
     return {
-        "language": str(lang)
+        "code": code,
+        "language": language
     }

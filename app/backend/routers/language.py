@@ -1,49 +1,44 @@
 import os
-import dotenv
-import json
 
+from typing import Optional, List
+from fastapi import APIRouter, Response, status, HTTPException, Depends, Cookie, responses
 
-from fastapi import APIRouter, Response, status, HTTPException
-
-from ..exceptions import *
+from ..exceptions import LanguageUnsupported
 from ..schemas import schema_lang
 from ..serializers.languageSerializers import langResponseEntity
+from ..utils import load_env, valid_language, languages
 
 
 router = APIRouter(
     tags=['Language'],
     prefix='/lang',
+    dependencies=[Depends(load_env)]
 )
 
 
 @router.get('/', response_model=schema_lang.LanguageBaseSchema)
-async def get_language():
+async def get_language(lang: Optional[str] = Cookie(None)):
 
     try:
-        dotenv.load_dotenv(override=True)
-        return langResponseEntity(os.getenv('SYS_LANGUAGE'))
+        if lang is None or not await valid_language(lang):
+            lang = os.getenv('SYS_LANGUAGE')
+
+        response = responses.JSONResponse(status_code=status.HTTP_200_OK, content=langResponseEntity(lang, languages[lang]['language']))
+        response.set_cookie('lang', lang, None, None, '/', None, False, True, 'lax')
+
+        return response
 
     except Exception as e:
 
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
 
 
-
-@router.get('/all', response_model=schema_lang.SupportedLanguagesSchema)
+@router.get('/all', response_model=List[schema_lang.LanguageBaseSchema])
 async def get_supported_languages():
 
     try:
 
-        f = open(os.path.join(os.getcwd(), 'lang.json'))
-        langs: dict = json.load(f)
-
-        ret = schema_lang.SupportedLanguagesSchema (
-            languages=list(langs.keys())
-        )
-
-        f.close()
-
-        return ret
+        return [langResponseEntity(key, value['language']) for key, value in languages.items()]
 
     except Exception as e:
 
@@ -51,25 +46,23 @@ async def get_supported_languages():
 
 
 @router.put('/', response_model=None)
-async def set_language(lang: schema_lang.LanguageBaseSchema):
+async def set_language(language: str, lang: Optional[str] = Cookie(None)):
 
     try:
+        if lang is None or not await valid_language(lang):
+            lang = os.getenv('SYS_LANGUAGE')
 
-        f = open(os.path.join(os.getcwd(), 'lang.json'))
-        langs: dict = json.load(f)
-        if not lang.language in langs.keys():
+        if not await valid_language(language):
             raise LanguageUnsupported()
 
-        dotenv.set_key(dotenv.find_dotenv(), 'SYS_LANGUAGE', str(lang.language))
-        dotenv.load_dotenv(override=True)
+        response = Response(status_code=status.HTTP_200_OK)
+        response.set_cookie('lang', language, None, None, '/', None, False, True, 'lax')
 
-        f.close()
-
-        return Response(status_code=status.HTTP_200_OK)
+        return response
 
     except LanguageUnsupported as e:
 
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation())
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
 
     except Exception as e:
 

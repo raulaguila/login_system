@@ -1,11 +1,13 @@
-from typing import List
-from fastapi import APIRouter, Depends, status, HTTPException, Response
+import os
+
+from typing import List, Optional
+from fastapi import APIRouter, Depends, status, HTTPException, Response, Cookie
 from bson.objectid import ObjectId
 from pymongo import MongoClient
 from datetime import datetime
 
 from .. import utils, oauth2
-from ..exceptions import *
+from ..exceptions import PasswordsNotMatch, UserAlredyExist, InvalidObjectId, UserNotFound, UserCantDeleteYourself
 from ..model import model_user
 from ..schemas import schema_user
 from ..database import get_connection
@@ -15,6 +17,7 @@ from ..serializers.userSerializers import userResponseEntity
 router = APIRouter(
     tags=['Users'],
     prefix='/user',
+    dependencies=[Depends(utils.load_env)]
 )
 
 
@@ -31,9 +34,11 @@ async def get_all(requester: dict = Depends(oauth2.require_user), client: MongoC
 
 
 @router.post('/new', status_code=status.HTTP_201_CREATED, response_model=schema_user.UserResponseSchema)
-async def create_user(payload: schema_user.CreateUserSchema, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
+async def create_user(payload: schema_user.CreateUserSchema, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
     try:
+        if lang is None or not await utils.valid_language(lang):
+            lang = os.getenv('SYS_LANGUAGE')
 
         # Compare password and passwordConfirm
         if payload.password != payload.passwordConfirm:
@@ -58,11 +63,11 @@ async def create_user(payload: schema_user.CreateUserSchema, requester: dict = D
 
     except PasswordsNotMatch as e:
 
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation())
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
 
     except UserAlredyExist as e:
 
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.translation())
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.translation(lang))
 
     except Exception as e:
 
@@ -70,9 +75,11 @@ async def create_user(payload: schema_user.CreateUserSchema, requester: dict = D
 
 
 @router.get('/{id}', response_model=schema_user.UserResponseSchema, status_code=status.HTTP_200_OK)
-async def get_user(id: str, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
+async def get_user(id: str, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
     try:
+        if lang is None or not await utils.valid_language(lang):
+            lang = os.getenv('SYS_LANGUAGE')
 
         if not ObjectId.is_valid(id):
             raise InvalidObjectId()
@@ -86,17 +93,20 @@ async def get_user(id: str, requester: dict = Depends(oauth2.require_user), clie
 
     except InvalidObjectId as e:
 
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation())
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
 
     except UserNotFound as e:
 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation())
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation(lang))
 
 
 @router.put('/{id}', response_model=schema_user.UserResponseSchema, status_code=status.HTTP_200_OK)
-async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
+async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
     try:
+        if lang is None or not await utils.valid_language(lang):
+            lang = os.getenv('SYS_LANGUAGE')
+
         if not ObjectId.is_valid(id):
             raise InvalidObjectId()
 
@@ -139,34 +149,41 @@ async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester:
 
     except (InvalidObjectId, UserAlredyExist, PasswordsNotMatch) as e:
 
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation())
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
 
     except UserNotFound as e:
 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation())
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation(lang))
 
 
 @router.delete('/{id}', status_code=status.HTTP_200_OK)
-async def delete_user(id: str, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection)):
+async def delete_user(id: str, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
     try:
+        if lang is None or not await utils.valid_language(lang):
+            lang = os.getenv('SYS_LANGUAGE')
 
-        requester = userResponseEntity(requester)
-        if requester['id'] == id:
+        if not ObjectId.is_valid(id):
+            raise InvalidObjectId()
+
+        if str(requester['_id']) == id:
             raise UserCantDeleteYourself()
 
         filter = {'_id': ObjectId(id)}
 
-        resp = await model_user.delete(client, filter)
-        if not resp:
+        if not await model_user.delete(client, filter):
             raise UserNotFound()
 
         return Response(status_code=status.HTTP_200_OK)
 
+    except InvalidObjectId as e:
+
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
+
     except UserCantDeleteYourself as e:
 
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.translation())
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.translation(lang))
 
     except UserNotFound as e:
 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation())
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation(lang))

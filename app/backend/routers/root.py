@@ -4,8 +4,6 @@ from fastapi import APIRouter, Response, status
 from fastapi.responses import RedirectResponse
 from fastapi_cache.decorator import cache
 
-from ..exceptions import *
-
 
 router = APIRouter(
     tags=['Root']
@@ -16,7 +14,8 @@ router = APIRouter(
 async def documentation():
 
     doc_endpoint = os.getenv('DOC_ENDPOINT')
-    return RedirectResponse(url=doc_endpoint, status_code=status.HTTP_308_PERMANENT_REDIRECT)
+
+    return RedirectResponse(url=doc_endpoint, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
 
 @router.get('/ping')

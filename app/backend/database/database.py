@@ -1,11 +1,11 @@
-from typing import AsyncGenerator
-from fastapi import HTTPException, status
+from typing import AsyncGenerator, Optional
+from fastapi import HTTPException, status, Cookie
 from pymongo.errors import OperationFailure, InvalidOperation
 
 from .mongo.connector import connector
 
 
-async def get_connection() -> AsyncGenerator:
+async def get_connection(lang: Optional[str] = Cookie(None)) -> AsyncGenerator:
 
     try:
 

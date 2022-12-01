@@ -1,8 +1,8 @@
 import os
 import base64
 
-from typing import List
-from fastapi import Depends, HTTPException, status
+from typing import List, Optional
+from fastapi import Depends, HTTPException, status, Cookie
 from async_fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 from bson.objectid import ObjectId
@@ -10,6 +10,7 @@ from bson.objectid import ObjectId
 from .exceptions import *
 from .database import connector
 from .model import model_user
+from .utils import valid_language
 
 
 COKIE_ACCESS_TOKEN = os.getenv('COKIE_ACCESS_TOKEN') if os.getenv('COKIE_ACCESS_TOKEN') else 'access_token'
@@ -35,9 +36,12 @@ def get_config():
     return Settings()
 
 
-async def require_user(Authorize: AuthJWT = Depends()):
+async def require_user(Authorize: AuthJWT = Depends(), lang: Optional[str] = Cookie(None)):
 
     try:
+        if lang is None or not await valid_language(lang):
+            lang = os.getenv('SYS_LANGUAGE')
+
         conn = connector()
         client = await conn.connect()
 
@@ -58,7 +62,7 @@ async def require_user(Authorize: AuthJWT = Depends()):
 
     except UserNotFound as e:
 
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation())
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation(lang))
 
     # except UserNotVerified:
 
@@ -66,11 +70,11 @@ async def require_user(Authorize: AuthJWT = Depends()):
 
     except UserNotActivated as e:
 
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation())
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation(lang))
 
     except MissingTokenError as e:
 
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation())
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation(lang))
 
     except Exception as e:
 

@@ -1,24 +1,15 @@
-import os, json, dotenv
+import os, json
 
 from async_fastapi_jwt_auth.exceptions import MissingTokenError
 
 
-class translate:
-
-    def translation(self, class_name: str) -> str:
-
-        f = open(os.path.join(os.getcwd(), 'lang.json'))
-        lang = json.load(f)
-        dotenv.load_dotenv(override=True)
-        translation_ : str = lang[os.getenv('SYS_LANGUAGE')]['exceptions'][f'{class_name}']
-        f.close()
-
-        return translation_
+with open(os.path.join(os.getcwd(), 'lang.json')) as file:
+    languages: dict = json.load(file)
 
 
-def translation(self):
+def translation(self, language: str):
 
-    return translate().translation(self.__class__.__name__)
+    return languages[language]['exceptions'][self.__class__.__name__]
 
 
 MissingTokenError.translation = translation

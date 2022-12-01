@@ -1,10 +1,11 @@
-import os, asyncio
+import os, asyncio, dotenv
 
+from enum import Enum
 from datetime import datetime
 from pymongo import MongoClient
 from passlib.context import CryptContext
 
-from .exceptions import *
+from .exceptions import UserOrPasswordWrong, languages
 from .database import connector
 from .schemas.user import CreateUserSchema
 
@@ -14,6 +15,16 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 ADM_NAME = os.getenv('ADM_NAME') if os.getenv('ADM_NAME') else 'Administrator'
 ADM_USER = os.getenv('ADM_USER') if os.getenv('ADM_USER') else 'admin@admin.com'
 ADM_PASS = os.getenv('ADM_PASS') if os.getenv('ADM_PASS') else 'admin.2023'
+
+
+async def valid_language(lang: str) -> str:
+
+    return lang in languages
+
+
+async def load_env():
+
+    dotenv.load_dotenv(override=True)
 
 
 async def hash_password(password: str):
@@ -53,8 +64,11 @@ async def initialize_db():
             upsert=True
         )
 
-    session = connector()
-    client: MongoClient = await session.connect()
-    await created_admin(client)
-    await asyncio.sleep(0.5)
-    await session.disconnect()
+    try:
+        session = connector()
+        client: MongoClient = await session.connect()
+        await created_admin(client)
+        await asyncio.sleep(0.5)
+        await session.disconnect()
+    except Exception as e:
+        print(f"{e}")

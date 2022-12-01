@@ -1,8 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-import os
-import time
+import os, gc, time
 
 from redis import asyncio as aioredis
 from fastapi import FastAPI, Request, status, Response
@@ -62,9 +61,10 @@ async def exception_callback(request: Request, exc: Exception):
     return JSONResponse(
         status_code=status.HTTP_418_IM_A_TEAPOT,
         content={
-            'message': f'Something wrong [{exc.__class__.__name__}]: {exc}',
+            'type': exc.__class__.__name__,
+            'message': f'{exc}',
             'request': request_info
-        },
+        }
     )
 
 
@@ -77,31 +77,24 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Time"] = str(process_time)
     response.headers["X-Version"] = f"{os.getenv('SYS_VERSION')}"
 
+    gc.collect()
+
     return response
 
 
 @app.on_event("startup")
 async def startup_event():
 
-    global redis
+    redis =  aioredis.from_url(f"redis://{os.environ['REDIS_HOST']}:{os.environ['REDIS_PORT']}", encoding="utf8", decode_responses=True, password=os.getenv('REDIS_PASS'))
+    FastAPICache.init(RedisBackend(redis), prefix="api-cache")
 
-    if os.getenv('REDIS_PASS') is not None:
-        redis =  aioredis.from_url(f"redis://{os.environ['REDIS_HOST']}:{os.environ['REDIS_PORT']}", encoding="utf8", decode_responses=True, password=os.environ['REDIS_PASS'])
-    else:
-        redis =  aioredis.from_url(f"redis://{os.environ['REDIS_HOST']}:{os.environ['REDIS_PORT']}", encoding="utf8", decode_responses=True)
-
-    FastAPICache.init(RedisBackend(redis), prefix="fimis-cache")
-
-    try:
-        await initialize_db()
-    except Exception as e:
-        print(f"{e}")
+    await initialize_db()
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
 
-    global redis
+    backend: RedisBackend = FastAPICache.get_backend()
 
-    await redis.close()
-    await redis.connection_pool.disconnect()
+    await backend.redis.close()
+    await backend.redis.connection_pool.disconnect()
