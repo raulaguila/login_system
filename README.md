@@ -1,7 +1,7 @@
-# API - Rest
+# API Rest - Login System
 ___
-## Backend
-Create .env file with following parameters:
+## Create .env file
+Create .env file with following parameters, and generate JWT keys:
 ```bash
 # Redis infos
 REDIS_HOST='10.5.0.50'
@@ -53,12 +53,12 @@ ADM_NAME='Administrator'
 ADM_USER='admin@admin.com'
 ADM_PASS='admin.2023'
 ```
-#### Docker Network
+## Create docker network
 Create the docker network with the following command:
 ```bash
 sudo docker network create -d bridge --subnet=10.5.0.0/24 --gateway=10.5.0.1 api_network
 ```
-#### Docker Containers
+## Build docker containers
 To run all containers, run the following command:
 ```bash
 sudo docker-compose up -d --build
@@ -69,4 +69,3 @@ sudo docker-compose -f docker-compose.mongo.yml up -d --build # For run only the
 sudo docker-compose -f docker-compose.redis.yml up -d --build # For run only the redis container
 sudo docker-compose -f docker-compose.api.yml up -d --build # For run only the api container
 ```
-## Frontend
