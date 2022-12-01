@@ -20,6 +20,11 @@ class TokenError(Exception):
     translation = translation
 
 
+class TokenInvalid(Exception):
+
+    translation = translation
+
+
 class PasswordsNotMatch(Exception):
 
     translation = translation

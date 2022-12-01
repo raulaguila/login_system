@@ -10,6 +10,7 @@
 			"UserCantDeleteYourself": "Não pode deletar a si mesmo",
 
 			"TokenError": "Não foi possível atualizar o token de acesso",
+			"TokenInvalid": "O token é inválido ou expirou",
 			"PasswordsNotMatch": "As senhas não coincidem",
 			"LanguageUnsupported": "Idioma não suportado",
 			"MissingTokenError": "Você não está logado",
@@ -27,6 +28,7 @@
 			"UserCantDeleteYourself": "Can't delete yourself",
 
 			"TokenError": "Could not refresh access token",
+			"TokenInvalid": "Token is invalid or has expired",
 			"PasswordsNotMatch": "Passwords do not match",
 			"LanguageUnsupported": "Language not supported",
 			"MissingTokenError": "You are not logged in",
@@ -44,6 +46,7 @@
 			"UserCantDeleteYourself": "No puedes eliminar a ti mismo",
 
 			"TokenError": "No se pudo actualizar el token de acceso",
+			"TokenInvalid": "El token no es válido o ha caducado",
 			"PasswordsNotMatch": "Las contraseñas no coinciden",
 			"LanguageUnsupported": "Idioma no admitido",
 			"MissingTokenError": "Usted no se ha identificado",
