@@ -78,7 +78,13 @@ async def require_user(Authorize: AuthJWT = Depends(), lang: Optional[str] = Coo
 
     except Exception as e:
 
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token is invalid or has expired.')
+        try:
+
+            raise TokenInvalid()
+
+        except TokenInvalid as e:
+
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation(lang))
 
     try:
         await conn.disconnect()
