@@ -4,13 +4,13 @@ ___
 Create .env file with following parameters, and generate JWT keys:
 ```bash
 # Redis infos
-REDIS_HOST='10.5.0.50'
-REDIS_PORT='6379'
+REDIS_HOST='10.5.0.50' # IP from docker, dont change
+REDIS_PORT='6379' # Port from docker, dont change
 REDIS_PASS='password123'
 
 # MongoDB infos
-MONGO_HOST='10.5.0.51'
-MONGO_PORT='27017'
+MONGO_HOST='10.5.0.51' # IP from docker, dont change
+MONGO_PORT='27017' # Port from docker, dont change
 MONGO_USER='admin'
 MONGO_PASS='password123'
 MONGO_BASE='fastapi'
