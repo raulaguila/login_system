@@ -10,7 +10,7 @@ from bson.objectid import ObjectId
 from .exceptions import *
 from .database import connector
 from .model import model_user
-from .utils import valid_language
+from .utils import start_request
 
 
 COKIE_ACCESS_TOKEN = os.getenv('COKIE_ACCESS_TOKEN') if os.getenv('COKIE_ACCESS_TOKEN') else 'access_token'
@@ -39,15 +39,16 @@ def get_config():
 async def require_user(Authorize: AuthJWT = Depends(), lang: Optional[str] = Cookie(None)):
 
     try:
-        if lang is None or not await valid_language(lang):
-            lang = os.getenv('SYS_LANGUAGE')
+        _, lang = await start_request(lang, None)
 
         conn = connector()
         client = await conn.connect()
 
         await Authorize.jwt_required()
         user_id = await Authorize.get_jwt_subject()
-        pipeline = [{'$match': {'_id': ObjectId(str(user_id))}}]
+        pipeline = [
+            {'$match': {'_id': ObjectId(str(user_id))}}
+        ]
         user = await model_user.get_first(client, pipeline)
 
         if not user:

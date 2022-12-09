@@ -2,6 +2,7 @@
 	"pt_BR": {
 		"language": "Português [Brasil]",
 		"exceptions": {
+			"UserNotAuthorized": "Você não tem autorização",
 			"UserNotFound": "Usuário não encontrado",
 			"UserNotVerified": "Por favor verifique sua conta",
 			"UserAlredyExist": "Nome do usuário associado com outra conta",
@@ -20,6 +21,7 @@
 	"en_US": {
 		"language": "English [US]",
 		"exceptions": {
+			"UserNotAuthorized": "You do not have authorization",
 			"UserNotFound": "User not found",
 			"UserNotVerified": "Please verify your account",
 			"UserAlredyExist": "Username associated with another account",
@@ -38,6 +40,7 @@
 	"es_ES": {
 		"language": "Español [España]",
 		"exceptions": {
+			"UserNotAuthorized": "No tienes autorización",
 			"UserNotFound": "Usuario no encontrado",
 			"UserNotVerified": "Por favor, verifique su cuenta",
 			"UserAlredyExist": "Nombre de usuario asociado a otra cuenta",

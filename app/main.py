@@ -76,6 +76,7 @@ async def add_process_time_header(request: Request, call_next):
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
     response.headers["X-Version"] = f"{os.getenv('SYS_VERSION')}"
+    response.headers["X-Powered-By"] = "Raul del Aguila"
 
     gc.collect()
 

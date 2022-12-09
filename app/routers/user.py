@@ -7,7 +7,7 @@ from pymongo import MongoClient
 from datetime import datetime
 
 from .. import utils, oauth2
-from ..exceptions import PasswordsNotMatch, UserAlredyExist, InvalidObjectId, UserNotFound, UserCantDeleteYourself
+from ..exceptions import PasswordsNotMatch, UserAlredyExist, InvalidObjectId, UserNotFound, UserCantDeleteYourself, UserNotAuthorized
 from ..model import model_user
 from ..schemas import schema_user
 from ..database import get_connection
@@ -37,8 +37,11 @@ async def get_all(requester: dict = Depends(oauth2.require_user), client: MongoC
 async def create_user(payload: schema_user.CreateUserSchema, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
     try:
-        if lang is None or not await utils.valid_language(lang):
-            lang = os.getenv('SYS_LANGUAGE')
+        is_admin, lang = await utils.start_request(lang, requester)
+
+        if not is_admin:
+
+            raise UserNotAuthorized()
 
         # Compare password and passwordConfirm
         if payload.password != payload.passwordConfirm:
@@ -69,6 +72,10 @@ async def create_user(payload: schema_user.CreateUserSchema, requester: dict = D
 
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.translation(lang))
 
+    except UserNotAuthorized as e:
+
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.translation(lang))
+
     except Exception as e:
 
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'{e}')
@@ -78,8 +85,7 @@ async def create_user(payload: schema_user.CreateUserSchema, requester: dict = D
 async def get_user(id: str, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
     try:
-        if lang is None or not await utils.valid_language(lang):
-            lang = os.getenv('SYS_LANGUAGE')
+        is_admin, lang = await utils.start_request(lang, requester)
 
         if not ObjectId.is_valid(id):
             raise InvalidObjectId()
@@ -104,8 +110,10 @@ async def get_user(id: str, requester: dict = Depends(oauth2.require_user), clie
 async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
     try:
-        if lang is None or not await utils.valid_language(lang):
-            lang = os.getenv('SYS_LANGUAGE')
+        is_admin, lang = await utils.start_request(lang, requester)
+
+        if not is_admin:
+            raise UserNotAuthorized()
 
         if not ObjectId.is_valid(id):
             raise InvalidObjectId()
@@ -151,6 +159,10 @@ async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester:
 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
 
+    except UserNotAuthorized as e:
+
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.translation(lang))
+
     except UserNotFound as e:
 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation(lang))
@@ -160,8 +172,10 @@ async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester:
 async def delete_user(id: str, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
     try:
-        if lang is None or not await utils.valid_language(lang):
-            lang = os.getenv('SYS_LANGUAGE')
+        is_admin, lang = await utils.start_request(lang, requester)
+
+        if not is_admin:
+            raise UserNotAuthorized()
 
         if not ObjectId.is_valid(id):
             raise InvalidObjectId()
@@ -180,7 +194,7 @@ async def delete_user(id: str, requester: dict = Depends(oauth2.require_user), c
 
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
 
-    except UserCantDeleteYourself as e:
+    except (UserCantDeleteYourself, UserNotAuthorized) as e:
 
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.translation(lang))
 
