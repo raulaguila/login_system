@@ -29,8 +29,7 @@ REFRESH_TOKEN_EXPIRES_IN = int(os.getenv("REFRESH_TOKEN_EXPIRES_IN"))
 async def login(payload: schema_user.LoginUserSchema, response: Response, Authorize: oauth2.AuthJWT = Depends(), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
     try:
-        if not await utils.valid_language(lang):
-            lang = os.getenv('SYS_LANGUAGE')
+        _, lang = await utils.start_request(lang, None)
 
         pipeline = [{'$match': {'username': payload.username.lower()}}]
 
@@ -75,8 +74,7 @@ async def login(payload: schema_user.LoginUserSchema, response: Response, Author
 async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
     try:
-        if not await utils.valid_language(lang):
-            lang = os.getenv('SYS_LANGUAGE')
+        _, lang = await utils.start_request(lang, None)
 
         await Authorize.jwt_refresh_token_required()
 
@@ -116,6 +114,8 @@ async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(
 
 @router.get('/logout', status_code=status.HTTP_200_OK)
 async def logout(Authorize: oauth2.AuthJWT = Depends(), lang: Optional[str] = Cookie(None)):
+
+    _, lang = await utils.start_request(lang, None)
 
     await Authorize.unset_jwt_cookies()
 

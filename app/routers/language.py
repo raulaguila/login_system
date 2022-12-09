@@ -6,7 +6,7 @@ from fastapi import APIRouter, Response, status, HTTPException, Depends, Cookie,
 from ..exceptions import LanguageUnsupported
 from ..schemas import schema_lang
 from ..serializers.languageSerializers import langResponseEntity
-from ..utils import load_env, valid_language, languages
+from ..utils import load_env, start_request, languages
 
 
 router = APIRouter(
@@ -20,8 +20,7 @@ router = APIRouter(
 async def get_language(lang: Optional[str] = Cookie(None)):
 
     try:
-        if lang is None or not await valid_language(lang):
-            lang = os.getenv('SYS_LANGUAGE')
+        _, lang = await start_request(lang, None)
 
         response = responses.JSONResponse(status_code=status.HTTP_200_OK, content=langResponseEntity(lang, languages[lang]['language']))
         response.set_cookie('lang', lang, None, None, '/', None, False, True, 'lax')
@@ -49,10 +48,9 @@ async def get_supported_languages():
 async def set_language(language: str, lang: Optional[str] = Cookie(None)):
 
     try:
-        if lang is None or not await valid_language(lang):
-            lang = os.getenv('SYS_LANGUAGE')
+        _, lang = await start_request(lang, None)
 
-        if not await valid_language(language):
+        if not language in languages:
             raise LanguageUnsupported()
 
         response = Response(status_code=status.HTTP_200_OK)

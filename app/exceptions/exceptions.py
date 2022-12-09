@@ -30,6 +30,11 @@ class PasswordsNotMatch(Exception):
     translation = translation
 
 
+class UserNotAuthorized(Exception):
+
+    translation = translation
+
+
 class UserCantDeleteYourself(Exception):
 
     translation = translation

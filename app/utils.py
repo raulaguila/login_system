@@ -1,6 +1,5 @@
 import os, asyncio, dotenv
 
-from enum import Enum
 from datetime import datetime
 from pymongo import MongoClient
 from passlib.context import CryptContext
@@ -17,9 +16,16 @@ ADM_USER = os.getenv('ADM_USER') if os.getenv('ADM_USER') else 'admin@admin.com'
 ADM_PASS = os.getenv('ADM_PASS') if os.getenv('ADM_PASS') else 'admin.2023'
 
 
-async def valid_language(lang: str) -> str:
+async def start_request(lang: str, requester: dict) -> tuple:
 
-    return lang in languages
+    language = lang if lang in languages else os.getenv('SYS_LANGUAGE')
+
+    if isinstance(requester, dict) and "role" in requester:
+        is_admin = requester["role"] == "admin"
+    else:
+        is_admin = None
+
+    return (is_admin, language)
 
 
 async def load_env():
