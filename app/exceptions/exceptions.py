@@ -7,69 +7,78 @@ with open(os.path.join(os.getcwd(), 'lang.json')) as file:
     languages: dict = json.load(file)
 
 
-def translation(self, language: str):
+class APIBaseException(Exception):
 
-    return languages[language]['exceptions'][self.__class__.__name__]
+    def __init__(self, lang: str, status_code: int) -> None:
 
+        self.language = lang
+        self.status_code = status_code
 
-MissingTokenError.translation = translation
+    def translation(self):
 
-
-class TokenError(Exception):
-
-    translation = translation
-
-
-class TokenInvalid(Exception):
-
-    translation = translation
+        return languages[self.language]['exceptions'][self.__class__.__name__]
 
 
-class PasswordsNotMatch(Exception):
+class MissingTokenErro(APIBaseException):
 
-    translation = translation
-
-
-class UserNotAuthorized(Exception):
-
-    translation = translation
+    pass
 
 
-class UserCantDeleteYourself(Exception):
+class TokenError(APIBaseException):
 
-    translation = translation
-
-
-class UserNotVerified(Exception):
-
-    translation = translation
+    pass
 
 
-class UserNotFound(Exception):
+class TokenInvalid(APIBaseException):
 
-    translation = translation
-
-
-class UserAlredyExist(Exception):
-
-    translation = translation
+    pass
 
 
-class UserNotActivated(Exception):
+class PasswordsNotMatch(APIBaseException):
 
-    translation = translation
-
-
-class UserOrPasswordWrong(Exception):
-
-    translation = translation
+    pass
 
 
-class LanguageUnsupported(Exception):
+class UserNotAuthorized(APIBaseException):
 
-    translation = translation
+    pass
 
 
-class InvalidObjectId(Exception):
+class UserCantDeleteYourself(APIBaseException):
 
-    translation = translation
+    pass
+
+
+class UserNotVerified(APIBaseException):
+
+    pass
+
+
+class UserNotFound(APIBaseException):
+
+    pass
+
+
+class UserAlredyExist(APIBaseException):
+
+    pass
+
+
+class UserNotActivated(APIBaseException):
+
+    pass
+
+
+class UserOrPasswordWrong(APIBaseException):
+
+    pass
+
+
+class LanguageUnsupported(APIBaseException):
+
+    pass
+
+
+class InvalidObjectId(APIBaseException):
+
+    pass

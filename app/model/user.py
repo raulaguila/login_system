@@ -1,7 +1,7 @@
 import os
 import asyncio
 
-from typing import Optional
+from typing import Optional, List
 from pymongo import ASCENDING
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -31,7 +31,7 @@ async def create_indexes(client: MongoClient) -> bool:
     return False
 
 
-async def get_all(client: MongoClient, pipeline: list) -> Optional[list]:
+async def get_all(client: MongoClient, pipeline: List[dict]) -> Optional[list]:
 
     docs = list()
 
@@ -41,7 +41,7 @@ async def get_all(client: MongoClient, pipeline: list) -> Optional[list]:
     return userResponseListEntity(docs)
 
 
-async def get_first(client: MongoClient, pipeline: list) -> Optional[dict]:
+async def get_first(client: MongoClient, pipeline: List[dict]) -> Optional[dict]:
 
     async for doc in client[os.getenv('MONGO_BASE')]['users'].aggregate(pipeline, allowDiskUse=True):
         return doc

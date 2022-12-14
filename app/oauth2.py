@@ -2,12 +2,12 @@ import os
 import base64
 
 from typing import List, Optional
-from fastapi import Depends, HTTPException, status, Cookie
+from fastapi import Depends, status, Cookie
 from async_fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 from bson.objectid import ObjectId
 
-from .exceptions import *
+from .exceptions import MissingTokenError, MissingTokenErro, TokenInvalid, UserNotFound, UserNotActivated
 from .database import connector
 from .model import model_user
 from .utils import start_request
@@ -33,63 +33,34 @@ class Settings(BaseModel):
 
 @AuthJWT.load_config
 def get_config():
+
     return Settings()
 
 
 async def require_user(Authorize: AuthJWT = Depends(), lang: Optional[str] = Cookie(None)):
 
-    try:
-        _, lang = await start_request(lang, None)
+    _, lang = await start_request(lang, None)
 
-        conn = connector()
-        client = await conn.connect()
+    try:
 
         await Authorize.jwt_required()
         user_id = await Authorize.get_jwt_subject()
-        pipeline = [
-            {'$match': {'_id': ObjectId(str(user_id))}}
-        ]
-        user = await model_user.get_first(client, pipeline)
 
-        if not user:
-            raise UserNotFound()
+    except MissingTokenError:
+        raise MissingTokenErro(lang=lang, status_code=status.HTTP_401_UNAUTHORIZED)
 
-
-        if not user['status']:
-            raise UserNotActivated()
-
-        # if not user["verified"]:
-        #     raise UserNotVerified()
-
-    except UserNotFound as e:
-
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation(lang))
-
-    # except UserNotVerified:
-
-    #     raise HTTPException(tatus_code=status.HTTP_401_UNAUTHORIZED, detail='Please verify your account.')
-
-    except UserNotActivated as e:
-
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation(lang))
-
-    except MissingTokenError as e:
-
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation(lang))
-
-    except Exception as e:
-
-        try:
-
-            raise TokenInvalid()
-
-        except TokenInvalid as e:
-
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation(lang))
-
-    try:
-        await conn.disconnect()
     except Exception:
-        pass
+        raise TokenInvalid(lang=lang, status_code=status.HTTP_401_UNAUTHORIZED)
+
+    conn = connector()
+    client = await conn.connect()
+    user = await model_user.get_first(client, [{'$match': {'_id': ObjectId(str(user_id))}}])
+    await conn.disconnect()
+
+    if not user:
+        raise UserNotFound(lang=lang, status_code=status.HTTP_401_UNAUTHORIZED)
+
+    if not user['status']:
+        raise UserNotActivated(lang=lang, status_code=status.HTTP_401_UNAUTHORIZED)
 
     return user

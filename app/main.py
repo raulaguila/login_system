@@ -50,22 +50,31 @@ app.include_router(user.router)
 @app.exception_handler(Exception)
 async def exception_callback(request: Request, exc: Exception):
 
-    request_info: dict = {
-        'url': f'{request.url}',
-        'path_params': request.path_params,
-        'query_params': f'{request.query_params}',
-        # 'body': f'{(await request.json())}',
-        # 'cookies': request.cookies
-    }
+    if hasattr(exc, 'translation'):
 
-    return JSONResponse(
-        status_code=status.HTTP_418_IM_A_TEAPOT,
-        content={
-            'type': exc.__class__.__name__,
-            'message': f'{exc}',
-            'request': request_info
-        }
-    )
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                'detail': exc.translation()
+            }
+        )
+
+    else:
+
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                'type': exc.__class__.__name__,
+                'message': f'{exc}',
+                'request': {
+                    'url': f'{request.url}',
+                    'path_params': request.path_params,
+                    'query_params': f'{request.query_params}',
+                    # 'body': f'{(await request.json())}',
+                    # 'cookies': request.cookies
+                }
+            }
+        )
 
 
 @app.middleware("http")
@@ -86,7 +95,7 @@ async def add_process_time_header(request: Request, call_next):
 @app.on_event("startup")
 async def startup_event():
 
-    redis =  aioredis.from_url(f"redis://{os.environ['REDIS_HOST']}:{os.environ['REDIS_PORT']}", encoding="utf8", decode_responses=True, password=os.getenv('REDIS_PASS'))
+    redis = aioredis.from_url(f"redis://{os.environ['REDIS_HOST']}:{os.environ['REDIS_PORT']}", encoding="utf8", decode_responses=True, password=os.getenv('REDIS_PASS'))
     FastAPICache.init(RedisBackend(redis), prefix="api-cache")
 
     await initialize_db()

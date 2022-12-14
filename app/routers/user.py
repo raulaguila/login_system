@@ -1,7 +1,5 @@
-import os
-
 from typing import List, Optional
-from fastapi import APIRouter, Depends, status, HTTPException, Response, Cookie
+from fastapi import APIRouter, Depends, status, Response, Cookie
 from bson.objectid import ObjectId
 from pymongo import MongoClient
 from datetime import datetime
@@ -36,168 +34,137 @@ async def get_all(requester: dict = Depends(oauth2.require_user), client: MongoC
 @router.post('/new', status_code=status.HTTP_201_CREATED, response_model=schema_user.UserResponseSchema)
 async def create_user(payload: schema_user.CreateUserSchema, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
-    try:
-        is_admin, lang = await utils.start_request(lang, requester)
+    is_admin, lang = await utils.start_request(lang, requester)
 
-        if not is_admin:
+    if not is_admin:
 
-            raise UserNotAuthorized()
+        raise UserNotAuthorized(lang=lang, status_code=status.HTTP_403_FORBIDDEN)
 
-        # Compare password and passwordConfirm
-        if payload.password != payload.passwordConfirm:
+    # Compare password and passwordConfirm
+    if payload.password != payload.passwordConfirm:
 
-            raise PasswordsNotMatch()
+        raise PasswordsNotMatch(lang=lang, status_code=status.HTTP_400_BAD_REQUEST)
 
-        #  Hash the password
-        payload.password = await utils.hash_password(payload.password)
-        del payload.passwordConfirm
-        # payload.role = 'admin'
-        payload.username = payload.username.lower()
-        payload = payload.dict()
-        payload['created_at'] = datetime.now()
-        payload['updated_at'] = payload['created_at']
+    #  Hash the password
+    payload.password = await utils.hash_password(payload.password)
+    del payload.passwordConfirm
+    # payload.role = 'admin'
+    payload.username = payload.username.lower()
+    payload = payload.dict()
+    payload['created_at'] = datetime.now()
+    payload['updated_at'] = payload['created_at']
 
-        new_user = await model_user.insert(client, payload)
-        if not new_user:
-            raise UserAlredyExist()
+    new_user = await model_user.insert(client, payload)
 
-        return userResponseEntity(new_user)
+    if not new_user:
 
+        raise UserAlredyExist(lang=lang, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-    except PasswordsNotMatch as e:
-
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
-
-    except UserAlredyExist as e:
-
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.translation(lang))
-
-    except UserNotAuthorized as e:
-
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.translation(lang))
-
-    except Exception as e:
-
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'{e}')
+    return userResponseEntity(new_user)
 
 
 @router.get('/{id}', response_model=schema_user.UserResponseSchema, status_code=status.HTTP_200_OK)
 async def get_user(id: str, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
-    try:
-        is_admin, lang = await utils.start_request(lang, requester)
+    is_admin, lang = await utils.start_request(lang, requester)
 
-        if not ObjectId.is_valid(id):
-            raise InvalidObjectId()
+    if not ObjectId.is_valid(id):
 
-        pipeline = [{'$match': {'_id': ObjectId(id)}}]
-        user = await model_user.get_first(client, pipeline)
-        if not user:
-            raise UserNotFound()
+        raise InvalidObjectId(lang=lang, status_code=status.HTTP_400_BAD_REQUEST)
 
-        return userResponseEntity(user)
+    pipeline = [{'$match': {'_id': ObjectId(id)}}]
+    user = await model_user.get_first(client, pipeline)
 
-    except InvalidObjectId as e:
+    if not user:
 
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
+        raise UserNotFound(lang=lang, status_code=status.HTTP_404_NOT_FOUND)
 
-    except UserNotFound as e:
-
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation(lang))
+    return userResponseEntity(user)
 
 
 @router.put('/{id}', response_model=schema_user.UserResponseSchema, status_code=status.HTTP_200_OK)
 async def update_user(id: str, payload: schema_user.UpdateUserSchema, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
-    try:
-        is_admin, lang = await utils.start_request(lang, requester)
+    is_admin, lang = await utils.start_request(lang, requester)
 
-        if not is_admin:
-            raise UserNotAuthorized()
+    if not is_admin:
 
-        if not ObjectId.is_valid(id):
-            raise InvalidObjectId()
+        raise UserNotAuthorized(lang=lang, status_code=status.HTTP_403_FORBIDDEN)
 
-        if payload.password and payload.password != payload.passwordConfirm:
-            raise PasswordsNotMatch()
+    if not ObjectId.is_valid(id):
 
-        del payload.passwordConfirm
-        if payload.password:
-            payload.password = await utils.hash_password(payload.password)
-        else:
-            del payload.password
+        raise InvalidObjectId(lang=lang, status_code=status.HTTP_400_BAD_REQUEST)
 
-        if not payload.role:
-            del payload.role
+    if payload.password and payload.password != payload.passwordConfirm:
 
-        if not payload.photo:
-            del payload.photo
+        raise PasswordsNotMatch(lang=lang, status_code=status.HTTP_400_BAD_REQUEST)
 
-        if not payload.email:
-            del payload.email
+    del payload.passwordConfirm
 
-        pipeline = [{'$match': {'username': str(payload.username).lower()}}]
-        user = await model_user.get_first(client, pipeline)
-        if user:
-            user = userResponseEntity(user)
-            if user['id'] != id:
-                raise UserAlredyExist()
+    if payload.password:
 
-        payload.username = payload.username.lower()
-        payload = payload.dict()
-        payload['updated_at'] = datetime.now()
+        payload.password = await utils.hash_password(payload.password)
 
-        filter = {'_id': ObjectId(id)}
-        user = await model_user.update(client, filter, payload)
+    else:
 
-        if not user:
-            raise UserNotFound()
+        del payload.password
 
-        return userResponseEntity(user)
+    if not payload.role:
 
-    except (InvalidObjectId, UserAlredyExist, PasswordsNotMatch) as e:
+        del payload.role
 
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
+    if not payload.photo:
 
-    except UserNotAuthorized as e:
+        del payload.photo
 
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.translation(lang))
+    if not payload.email:
 
-    except UserNotFound as e:
+        del payload.email
 
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation(lang))
+    pipeline = [{'$match': {'username': str(payload.username).lower()}}]
+    user = await model_user.get_first(client, pipeline)
+    if user:
+
+        user = userResponseEntity(user)
+        if user['id'] != id:
+
+            raise UserAlredyExist(lang=lang, status_code=status.HTTP_400_BAD_REQUEST)
+
+    payload.username = payload.username.lower()
+    payload = payload.dict()
+    payload['updated_at'] = datetime.now()
+
+    filter = {'_id': ObjectId(id)}
+    user = await model_user.update(client, filter, payload)
+
+    if not user:
+
+        raise UserNotFound(lang=lang, status_code=status.HTTP_404_NOT_FOUND)
+
+    return userResponseEntity(user)
 
 
 @router.delete('/{id}', status_code=status.HTTP_200_OK)
 async def delete_user(id: str, requester: dict = Depends(oauth2.require_user), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
-    try:
-        is_admin, lang = await utils.start_request(lang, requester)
+    is_admin, lang = await utils.start_request(lang, requester)
 
-        if not is_admin:
-            raise UserNotAuthorized()
+    if not is_admin:
 
-        if not ObjectId.is_valid(id):
-            raise InvalidObjectId()
+        raise UserNotAuthorized(lang=lang, status_code=status.HTTP_403_FORBIDDEN)
 
-        if str(requester['_id']) == id:
-            raise UserCantDeleteYourself()
+    if not ObjectId.is_valid(id):
 
-        filter = {'_id': ObjectId(id)}
+        raise InvalidObjectId(lang=lang, status_code=status.HTTP_400_BAD_REQUEST)
 
-        if not await model_user.delete(client, filter):
-            raise UserNotFound()
+    if str(requester['_id']) == id:
 
-        return Response(status_code=status.HTTP_200_OK)
+        raise UserCantDeleteYourself(lang=lang, status_code=status.HTTP_403_FORBIDDEN)
 
-    except InvalidObjectId as e:
+    filter = {'_id': ObjectId(id)}
 
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
+    if not await model_user.delete(client, filter):
 
-    except (UserCantDeleteYourself, UserNotAuthorized) as e:
+        raise UserNotFound(lang=lang, status_code=status.HTTP_404_NOT_FOUND)
 
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.translation(lang))
-
-    except UserNotFound as e:
-
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.translation(lang))
+    return Response(status_code=status.HTTP_200_OK)
