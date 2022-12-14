@@ -4,26 +4,18 @@ from datetime import datetime
 from pymongo import MongoClient
 from passlib.context import CryptContext
 
-from .exceptions import UserOrPasswordWrong, languages
+from .exceptions import languages
 from .database import connector
 from .schemas.user import CreateUserSchema
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-ADM_NAME = os.getenv('ADM_NAME') if os.getenv('ADM_NAME') else 'Administrator'
-ADM_USER = os.getenv('ADM_USER') if os.getenv('ADM_USER') else 'admin@admin.com'
-ADM_PASS = os.getenv('ADM_PASS') if os.getenv('ADM_PASS') else 'admin.2023'
-
 
 async def start_request(lang: str, requester: dict) -> tuple:
 
     language = lang if lang in languages else os.getenv('SYS_LANGUAGE')
-
-    if isinstance(requester, dict) and "role" in requester:
-        is_admin = requester["role"] == "admin"
-    else:
-        is_admin = None
+    is_admin = isinstance(requester, dict) and "role" in requester and requester["role"] == "admin"
 
     return (is_admin, language)
 
@@ -38,14 +30,16 @@ async def hash_password(password: str):
     return pwd_context.hash(password)
 
 
-async def verify_password(password: str, hashed_password: str):
+async def equals_passwords(password: str, hashed_password: str):
 
-    if not pwd_context.verify(password, hashed_password):
-
-        raise UserOrPasswordWrong()
+    return pwd_context.verify(password, hashed_password)
 
 
 async def initialize_db():
+
+    ADM_NAME = os.getenv('ADM_NAME') if os.getenv('ADM_NAME') else 'Administrator'
+    ADM_USER = os.getenv('ADM_USER') if os.getenv('ADM_USER') else 'admin@admin.com'
+    ADM_PASS = os.getenv('ADM_PASS') if os.getenv('ADM_PASS') else 'admin.2023'
 
     async def created_admin(client: MongoClient):
 

@@ -3,10 +3,10 @@ import os
 from typing import Optional
 from datetime import timedelta
 from bson.objectid import ObjectId
-from fastapi import APIRouter, Response, status, Depends, HTTPException, Cookie, responses
+from fastapi import APIRouter, Response, status, Depends, Cookie, responses
 
 from .. import utils, oauth2
-from ..exceptions import UserOrPasswordWrong, UserNotActivated, TokenError, UserNotFound, MissingTokenError
+from ..exceptions import UserOrPasswordWrong, UserNotActivated, TokenError, UserNotFound, MissingTokenError, MissingTokenErro
 from ..database import get_connection
 from ..schemas import schema_user
 from ..model import model_user
@@ -28,46 +28,37 @@ REFRESH_TOKEN_EXPIRES_IN = int(os.getenv("REFRESH_TOKEN_EXPIRES_IN"))
 @router.post('/login')
 async def login(payload: schema_user.LoginUserSchema, response: Response, Authorize: oauth2.AuthJWT = Depends(), client: MongoClient = Depends(get_connection), lang: Optional[str] = Cookie(None)):
 
-    try:
-        _, lang = await utils.start_request(lang, None)
+    _, lang = await utils.start_request(lang, None)
 
-        pipeline = [{'$match': {'username': payload.username.lower()}}]
+    pipeline = [{'$match': {'username': payload.username.lower()}}]
 
-        user = await model_user.get_first(client, pipeline)
+    user = await model_user.get_first(client, pipeline)
 
-        if not user:
-            raise UserOrPasswordWrong()
+    # Check if user exist and if password is valid
+    if not user or not await utils.equals_passwords(payload.password, user['password']):
 
-        # Check if the password is valid, except WrongPassword if is not valid
-        await utils.verify_password(payload.password, user['password'])
+        raise UserOrPasswordWrong(lang=lang, status_code=status.HTTP_400_BAD_REQUEST)
 
-        # Check if user is activated
-        if not user['status']:
-            raise UserNotActivated()
+    # Check if user is activated
+    if not user['status']:
 
-        user = userEntity(user)
+        raise UserNotActivated(lang=lang, status_code=status.HTTP_401_UNAUTHORIZED)
 
-        # Create access token
-        access_token = await Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
+    user = userEntity(user)
 
-        # Create refresh token
-        refresh_token = await Authorize.create_refresh_token(subject=str(user["id"]), expires_time=timedelta(minutes=REFRESH_TOKEN_EXPIRES_IN))
+    # Create access token
+    access_token = await Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
 
-        # Store refresh and access tokens in cookie
-        response.set_cookie(oauth2.COKIE_ACCESS_TOKEN, access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
-        response.set_cookie(oauth2.COKIE_REFRESH_TOKEN, refresh_token, REFRESH_TOKEN_EXPIRES_IN * 60, REFRESH_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
-        response.set_cookie('lang', lang, None, None, '/', None, False, True, 'lax')
+    # Create refresh token
+    refresh_token = await Authorize.create_refresh_token(subject=str(user["id"]), expires_time=timedelta(minutes=REFRESH_TOKEN_EXPIRES_IN))
 
-        # Send both access
-        return {'status': 'success', 'access_token': access_token}
+    # Store refresh and access tokens in cookie
+    response.set_cookie(oauth2.COKIE_ACCESS_TOKEN, access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
+    response.set_cookie(oauth2.COKIE_REFRESH_TOKEN, refresh_token, REFRESH_TOKEN_EXPIRES_IN * 60, REFRESH_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
+    response.set_cookie('lang', lang, None, None, '/', None, False, True, 'lax')
 
-    except UserNotActivated as e:
-
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation(lang))
-
-    except UserOrPasswordWrong as e:
-
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
+    # Send both access
+    return {'status': 'success', 'access_token': access_token}
 
 
 @router.get('/refresh')
@@ -82,28 +73,23 @@ async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(
 
         if not user_id:
 
-            raise TokenError()
+            raise TokenError(lang=lang, status_code=status.HTTP_401_UNAUTHORIZED)
 
         pipeline = [{'$match': {'_id': ObjectId(str(user_id))}}]
         user = await model_user.get_first(client, pipeline)
+
         if not user:
-            UserNotFound()
+
+            raise UserNotFound(lang=lang, status_code=status.HTTP_401_UNAUTHORIZED)
+
         user = userEntity(user)
 
         access_token = await Authorize.create_access_token(subject=str(user["id"]), expires_time=timedelta(minutes=ACCESS_TOKEN_EXPIRES_IN))
         refresh_token = await Authorize.create_refresh_token(subject=str(user["id"]), expires_time=timedelta(minutes=REFRESH_TOKEN_EXPIRES_IN))
 
-    except (UserNotFound, TokenError) as e:
+    except MissingTokenError:
 
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=e.translation(lang))
-
-    except MissingTokenError as e:
-
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=e.translation(lang))
-
-    except Exception as e:
-
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"{e}")
+        raise MissingTokenErro(lang=lang, status_code=status.HTTP_400_BAD_REQUEST)
 
     response.set_cookie(oauth2.COKIE_ACCESS_TOKEN, access_token, ACCESS_TOKEN_EXPIRES_IN * 60, ACCESS_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
     response.set_cookie(oauth2.COKIE_REFRESH_TOKEN, refresh_token, REFRESH_TOKEN_EXPIRES_IN * 60, REFRESH_TOKEN_EXPIRES_IN * 60, '/', None, False, True, 'lax')
@@ -113,9 +99,9 @@ async def refresh_token(response: Response, Authorize: oauth2.AuthJWT = Depends(
 
 
 @router.get('/logout', status_code=status.HTTP_200_OK)
-async def logout(Authorize: oauth2.AuthJWT = Depends(), lang: Optional[str] = Cookie(None)):
+async def logout(Authorize: oauth2.AuthJWT = Depends(), requester: dict = Depends(oauth2.require_user), lang: Optional[str] = Cookie(None)):
 
-    _, lang = await utils.start_request(lang, None)
+    _, lang = await utils.start_request(lang, requester)
 
     await Authorize.unset_jwt_cookies()
 
