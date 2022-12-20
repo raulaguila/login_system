@@ -1,2 +1,2 @@
-from ..schemas import user as schema_user
-from ..schemas import language as schema_lang
+from . import user as schema_user
+from . import language as schema_lang
