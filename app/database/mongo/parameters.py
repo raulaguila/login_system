@@ -4,6 +4,7 @@ from typing import Optional
 
 
 class parameters(object):
+
     def __init__(self) -> None:
         self.host = None
         self.port = None
@@ -19,7 +20,7 @@ class parameters(object):
 
     @host.setter
     def host(self, _host: str) -> None:
-        assert _host is None or isinstance(_host, str), TypeError(f"{'host'.upper()} must be a string but received: {type(_host)}.")
+        assert _host is None or isinstance(_host, str), TypeError(f"\'host\' must be a string but received: {type(_host)}.")
 
         self._host = _host
 
@@ -29,8 +30,8 @@ class parameters(object):
 
     @port.setter
     def port(self, _port: int) -> None:
-        assert _port is None or isinstance(_port, int), TypeError(f"{'port'.upper()} must be a integer but received: {type(_port)}.")
-        assert _port is None or _port > 0, ValueError(f"{'port'.upper()} value cannot be a negative value, value: {_port}.")
+        assert _port is None or isinstance(_port, int), TypeError(f"\'port\' must be a integer but received: {type(_port)}.")
+        assert _port is None or _port > 0, ValueError(f"\'port\' value cannot be a negative value, value: {_port}.")
 
         self._port = _port
 
@@ -40,7 +41,7 @@ class parameters(object):
 
     @username.setter
     def username(self, _username: str) -> None:
-        assert _username is None or isinstance(_username, str), TypeError(f"{'username'.upper()} must be a string but received: {type(_username)}.")
+        assert _username is None or isinstance(_username, str), TypeError(f"\'username\' must be a string but received: {type(_username)}.")
 
         self._username = _username
 
@@ -50,7 +51,7 @@ class parameters(object):
 
     @password.setter
     def password(self, _password: str) -> None:
-        assert _password is None or isinstance(_password, str), TypeError(f"{'password'.upper()} must be a string but received: {type(_password)}.")
+        assert _password is None or isinstance(_password, str), TypeError(f"\'password\' must be a string but received: {type(_password)}.")
 
         self._password = _password
 
@@ -60,7 +61,7 @@ class parameters(object):
 
     @database.setter
     def database(self, _database: str) -> None:
-        assert _database is None or isinstance(_database, str), TypeError(f"{'database'.upper()} must be a string but received: {type(_database)}.")
+        assert _database is None or isinstance(_database, str), TypeError(f"\'database\' must be a string but received: {type(_database)}.")
 
         self._database = _database
 
@@ -70,7 +71,7 @@ class parameters(object):
 
     @use_srv.setter
     def use_srv(self, _use_srv: bool) -> None:
-        assert isinstance(_use_srv, bool), TypeError(f"{'use_srv'.upper()} must be a boolean but received: {type(_use_srv)}.")
+        assert isinstance(_use_srv, bool), TypeError(f"\'use_srv\' must be a boolean but received: {type(_use_srv)}.")
 
         self._use_srv = _use_srv
 
@@ -80,7 +81,7 @@ class parameters(object):
 
     @use_authenticator.setter
     def use_authenticator(self, _use_authenticator: bool) -> None:
-        assert isinstance(_use_authenticator, bool), TypeError(f"{'use_authenticator'.upper()} must be a boolean but received: {type(_use_authenticator)}.")
+        assert isinstance(_use_authenticator, bool), TypeError(f"\'use_authenticator\' must be a boolean but received: {type(_use_authenticator)}.")
 
         self._use_authenticator = _use_authenticator
 
@@ -91,13 +92,13 @@ class parameters(object):
     def __str__(self) -> str:
 
         # Check if any value is None
-        assert self.host is not None, f"{'host'.upper()} not defined or is None, host value: {self.host}."
+        assert self.host is not None, ValueError(f"\'host\' not defined or is None, host value: {self.host}.")
         if not self.use_srv:
-            assert self.port is not None, f"{'port'.upper()} not defined or is None, port value: {self.port}."
+            assert self.port is not None, ValueError(f"\'port\' not defined or is None, port value: {self.port}.")
         if self.use_authenticator:
-            assert self.username is not None, f"{'username'.upper()} not defined or is None, username value: {self.username}."
-            assert self.password is not None, f"{'password'.upper()} not defined or is None, password value: {self.password}."
-        assert self.database is not None, f"{'database'.upper()} not defined or is None, database value: {self.database}."
+            assert self.username is not None, ValueError(f"\'username\' not defined or is None, username value: {self.username}.")
+            assert self.password is not None, ValueError(f"\'password\' not defined or is None, password value: {self.password}.")
+        assert self.database is not None, ValueError(f"\'database\' not defined or is None, database value: {self.database}.")
 
         # Create URI
         driver = f"mongodb{'+srv' if self.use_srv else ''}"

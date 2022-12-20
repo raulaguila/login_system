@@ -1,2 +1,2 @@
-from ..serializers.userSerializers import *
-from ..serializers.languageSerializers import *
+from .userSerializers import *
+from .languageSerializers import *
